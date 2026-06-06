@@ -1,8 +1,9 @@
-# Multi-Chat Stream Widget (Arch Linux)
+# Multi-Chat Stream Widget
 
 A lightweight, self-hosted chat widget for OBS Studio that combines Twitch and YouTube chat. It bypasses YouTube API limits by scraping the live chat directly, supports 7TV/BTTV/FFZ emotes natively, and features a real-time WebSocket settings menu.
 
 ## Features
+* **Operating System:** Supports any OS (Windows, Linux)
 * **Unified Chat:** Combines Twitch and YouTube into a single chronological feed.
 * **Native Emote Support:** Fetches and displays 7TV, BTTV, and FFZ emotes automatically.
 * **Auto-Reconnect:** Checks YouTube every 60 seconds if you aren't currently live.
