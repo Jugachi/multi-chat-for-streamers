@@ -5,9 +5,19 @@
     <link id="theme-link" rel="stylesheet" href="/themes/dark-pill.css">
     
     <style>
-        /* Base styles for the settings menu */
+        /* Global structure overrides depending on the mode */
+        body.mode-widget { overflow: hidden !important; }
+        body.mode-chat { overflow-y: auto !important; scroll-behavior: smooth; }
+
+        /* Custom Scrollbar styling for Chat Mode */
+        body.mode-chat::-webkit-scrollbar { width: 8px; }
+        body.mode-chat::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        body.mode-chat::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        body.mode-chat::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+        /* Settings Menu Styles */
         #settings-menu {
-            display: none; /* Hidden by default */
+            display: none;
             position: fixed;
             top: 20px;
             right: 20px;
@@ -22,15 +32,81 @@
             width: 250px;
         }
         #settings-menu h3 { margin-top: 0; font-size: 16px; border-bottom: 1px solid #3f3f46; padding-bottom: 10px; }
-        .setting-row { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px;}
+        .setting-row { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; font-family: sans-serif;}
         .setting-row select { background: #0e0e10; color: white; border: 1px solid #3f3f46; padding: 8px; border-radius: 5px; cursor: pointer; }
-        .hint { font-size: 12px; color: #adadb8; text-align: center; margin-top: 10px; }
+        .hint { font-size: 12px; color: #adadb8; text-align: center; margin-top: 10px; font-family: sans-serif;}
+
+        /* Floating Scroll-to-Bottom Button */
+        #scroll-btn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #9146FF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-family: sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 9998;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); }
+            40% { transform: translate(-50%, -6px); }
+            60% { transform: translate(-50%, -3px); }
+        }
+
+        /* Universal Emote Styling */
+        .emote { 
+            height: 28px; 
+            vertical-align: middle; 
+            margin: 0 2px;
+        }
+
+        /* Mention Highlighting */
+        .mention-highlight {
+            background: rgba(255, 215, 0, 0.15) !important;
+            border-left: 4px solid #ffd700 !important;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        /* System Notifications */
+        .system-msg {
+            text-align: center;
+            font-style: italic;
+            font-weight: bold;
+            padding: 8px;
+            margin: 10px 0;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            font-size: 14px;
+            animation: fadeIn 0.3s ease-out;
+        }
     </style>
 </head>
-<body>
+<body class="mode-widget">
     
     <div id="settings-menu">
         <h3>Widget Settings</h3>
+        <div class="setting-row">
+            <label>Display Mode</label>
+            <select id="mode-select">
+                <option value="widget">Widget Mode (Clean/OBS)</option>
+                <option value="chat">Chat Mode (1000 Msg History)</option>
+            </select>
+        </div>
+        <div class="setting-row">
+            <label>Highlight Mentions</label>
+            <select id="mention-select">
+                <option value="true">Enabled</option>
+                <option value="false">Disabled</option>
+            </select>
+        </div>
         <div class="setting-row">
             <label>Theme</label>
             <select id="theme-select">
@@ -50,6 +126,8 @@
         <div class="hint">Press 'T' to close</div>
     </div>
 
+    <button id="scroll-btn">⬇ New Messages Below</button>
+
     <div id="chatbox"></div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -57,66 +135,124 @@
         const socket = io();
         const chatbox = document.getElementById('chatbox');
         const settingsMenu = document.getElementById('settings-menu');
+        const modeSelect = document.getElementById('mode-select');
         const themeSelect = document.getElementById('theme-select');
         const bgSelect = document.getElementById('bg-select');
         const themeLink = document.getElementById('theme-link');
+        const scrollBtn = document.getElementById('scroll-btn');
+        let streamerName = "";
+        let highlightMentions = true;
+        const mentionSelect = document.getElementById('mention-select');
 
-        // --- THEME & BACKGROUND LOGIC ---
-        
-        // Listen for config loading from the server
-        socket.on('loadConfig', (config) => {
-            // Apply Theme
-            themeLink.href = `/themes/${config.theme}.css`;
-            themeSelect.value = config.theme;
-            
-            // Apply Background
-            document.body.style.background = config.background === 'dark' ? '#0e0e10' : 'transparent';
-            bgSelect.value = config.background;
-        });
+        let currentMode = 'widget';
+        let isUserScrolledUp = false;
 
-        // Send changes back to the server when dropdowns change
-        themeSelect.addEventListener('change', (e) => {
-            socket.emit('updateConfig', { theme: e.target.value });
-        });
-        
-        bgSelect.addEventListener('change', (e) => {
-            socket.emit('updateConfig', { background: e.target.value });
-        });
-
-        // --- HOTKEY LOGIC ---
-        document.addEventListener('keydown', (e) => {
-            // If they press 'T' or 't'
-            if (e.key.toLowerCase() === 't') {
-                if (settingsMenu.style.display === 'none' || settingsMenu.style.display === '') {
-                    settingsMenu.style.display = 'block';
-                } else {
-                    settingsMenu.style.display = 'none';
-                }
-            }
-        });
-
-        // --- CHAT MESSAGE LOGIC ---
         const icons = {
             Twitch: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>`,
             YouTube: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`
         };
 
-        socket.on('chatMessage', (data) => {
+        function createMessageElement(data) {
             const msgDiv = document.createElement('div');
             msgDiv.className = 'message';
-            const iconSvg = icons[data.platform] || '';
+            
+            // Check if mentions are enabled AND the message contains your name
+            if (highlightMentions && streamerName && data.message.toLowerCase().includes(streamerName.toLowerCase())) {
+                msgDiv.classList.add('mention-highlight');
+            }
 
+            const iconSvg = icons[data.platform] || '';
             msgDiv.innerHTML = `
                 <div class="platform-icon" style="color: ${data.color}">${iconSvg}</div>
                 <span class="author" style="color: ${data.platform === 'Twitch' ? data.color : 'inherit'}">${data.author}:</span>
                 <span class="text">${data.message}</span>
             `;
-            
-            chatbox.appendChild(msgDiv);
-            window.scrollTo(0, document.body.scrollHeight);
+            return msgDiv;
+        }
 
-            if (chatbox.children.length > 50) {
+        socket.on('systemMessage', (data) => {
+            const sysDiv = document.createElement('div');
+            sysDiv.className = 'system-msg';
+            sysDiv.style.color = data.color;
+            sysDiv.innerText = data.text;
+            
+            chatbox.appendChild(sysDiv);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        function appendMessage(data) {
+            const msgElement = createMessageElement(data);
+            chatbox.appendChild(msgElement);
+            
+            const maxAllowed = (currentMode === 'widget') ? 50 : 1000;
+            while (chatbox.children.length > maxAllowed) {
                 chatbox.removeChild(chatbox.firstChild);
+            }
+
+            // Auto-scroll logic
+            if (!isUserScrolledUp || currentMode === 'widget') {
+                window.scrollTo(0, document.body.scrollHeight);
+            } else if (currentMode === 'chat') {
+                scrollBtn.style.display = 'block';
+            }
+        }
+
+        socket.on('loadConfig', (config) => {
+            currentMode = config.mode || 'widget';
+            document.body.className = `mode-${currentMode}`;
+            modeSelect.value = currentMode;
+            if (currentMode === 'widget') scrollBtn.style.display = 'none';
+
+            themeLink.href = `/themes/${config.theme}.css`;
+            themeSelect.value = config.theme;
+            document.body.style.background = config.background === 'dark' ? '#0e0e10' : 'transparent';
+            bgSelect.value = config.background;
+
+            streamerName = config.streamerName || "";
+            highlightMentions = config.mentions !== false;
+            mentionSelect.value = highlightMentions.toString();
+        });
+
+        // Load complete server-side history cache upon opening/refreshing tab
+        socket.on('chatHistory', (history) => {
+            chatbox.innerHTML = '';
+            history.forEach(msg => appendMessage(msg));
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('chatMessage', (data) => {
+            appendMessage(data);
+        });
+
+        modeSelect.addEventListener('change', (e) => socket.emit('updateConfig', { mode: e.target.value }));
+        themeSelect.addEventListener('change', (e) => socket.emit('updateConfig', { theme: e.target.value }));
+        bgSelect.addEventListener('change', (e) => socket.emit('updateConfig', { background: e.target.value }));
+        mentionSelect.addEventListener('change', (e) => socket.emit('updateConfig', { mentions: e.target.value === 'true' }));
+
+        // Detect manual scrolling up
+        window.addEventListener('scroll', () => {
+            if (currentMode !== 'chat') return;
+            
+            // Check if user is away from bottom by more than 80px
+            const distanceToBottom = document.body.scrollHeight - window.innerHeight - window.scrollY;
+            isUserScrolledUp = distanceToBottom > 80;
+
+            if (!isUserScrolledUp) {
+                scrollBtn.style.display = 'none';
+            }
+        });
+
+        // Click handler for the floating snap-to-bottom button
+        scrollBtn.addEventListener('click', () => {
+            window.scrollTo(0, document.body.scrollHeight);
+            scrollBtn.style.display = 'none';
+            isUserScrolledUp = false;
+        });
+
+        // Toggle configuration menu with 'T' key
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 't') {
+                settingsMenu.style.display = (settingsMenu.style.display === 'block') ? 'none' : 'block';
             }
         });
     </script>

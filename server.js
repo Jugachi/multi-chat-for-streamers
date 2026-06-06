@@ -12,93 +12,189 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve the frontend files from the "public" folder
 app.use(express.static('public'));
 
-// --- THEME ROUTER ---
-app.get('/theme.css', (req, res) => {
+// Cache up to 1000 messages in memory
+let messageHistory = [];
+const MAX_HISTORY = 1000;
+
+function handleIncomingMessage(msgData) {
+    messageHistory.push(msgData);
+    if (messageHistory.length > MAX_HISTORY) {
+        messageHistory.shift();
+    }
+    io.emit('chatMessage', msgData);
+}
+
+const TWITCH_CHANNEL = process.env.TWITCH_CHANNEL; 
+const YOUTUBE_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
+const PORT = process.env.PORT || 8080;
+
+const thirdPartyEmotes = {};
+
+async function loadExternalEmotes(roomId) {
+    console.log(`Fetching 7TV, BTTV, and FFZ emotes for Twitch Room ID: ${roomId}...`);
+    
+    // 7TV (Global & Channel)
     try {
-        // Read config.json dynamically on every page load/OBS refresh
-        const configData = fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8');
-        const config = JSON.parse(configData);
-        const themeName = config.theme || 'dark-pill';
-        
-        // Send the corresponding theme file
-        res.sendFile(path.join(__dirname, 'public', 'themes', `${themeName}.css`));
-    } catch (err) {
-        console.error("Error loading theme config, falling back to default:", err);
-        res.sendFile(path.join(__dirname, 'public', 'themes', 'dark-pill.css'));
+        const stvGlobal = await fetch('https://7tv.io/v3/emote-sets/global').then(r => r.json());
+        stvGlobal.emotes.forEach(e => thirdPartyEmotes[e.name] = `https://cdn.7tv.app/emote/${e.id}/1x.webp`);
+        const stvChannel = await fetch(`https://7tv.io/v3/users/twitch/${roomId}`).then(r => r.json());
+        if (stvChannel.emote_set) {
+            stvChannel.emote_set.emotes.forEach(e => thirdPartyEmotes[e.name] = `https://cdn.7tv.app/emote/${e.id}/1x.webp`);
+        }
+    } catch(e) { console.log("7TV skipped or failed."); }
+
+    // BTTV (Global & Channel)
+    try {
+        const bttvGlobal = await fetch('https://api.betterttv.net/3/cached/emotes/global').then(r => r.json());
+        bttvGlobal.forEach(e => thirdPartyEmotes[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x`);
+        const bttvChannel = await fetch(`https://api.betterttv.net/3/cached/users/twitch/${roomId}`).then(r => r.json());
+        [...(bttvChannel.channelEmotes || []), ...(bttvChannel.sharedEmotes || [])].forEach(e => {
+            thirdPartyEmotes[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x`;
+        });
+    } catch(e) { console.log("BTTV skipped or failed."); }
+
+    // FFZ (Global & Channel)
+    try {
+        const ffzGlobal = await fetch('https://api.frankerfacez.com/v1/set/global').then(r => r.json());
+        ffzGlobal.default_sets.forEach(set => {
+            ffzGlobal.sets[set].emoticons.forEach(e => thirdPartyEmotes[e.name] = `https://cdn.frankerfacez.com/emote/${e.id}/1`);
+        });
+        const ffzChannel = await fetch(`https://api.frankerfacez.com/v1/room/id/${roomId}`).then(r => r.json());
+        const ffzSet = ffzChannel.room.set;
+        ffzChannel.sets[ffzSet].emoticons.forEach(e => thirdPartyEmotes[e.name] = `https://cdn.frankerfacez.com/emote/${e.id}/1`);
+    } catch(e) { console.log("FFZ skipped or failed."); }
+
+    console.log(`✅ Loaded ${Object.keys(thirdPartyEmotes).length} custom emotes into memory!`);
+}
+
+function parseThirdParty(text) {
+    return text.split(' ').map(word => {
+        if (thirdPartyEmotes[word]) return `<img src="${thirdPartyEmotes[word]}" class="emote" alt="${word}">`;
+        return word;
+    }).join(' ');
+}
+
+function formatTwitchMessage(message, emotesTags) {
+    let replacements = [];
+    
+    // Process Native Twitch Emotes First
+    if (emotesTags) {
+        for (const [emoteId, placements] of Object.entries(emotesTags)) {
+            for (const placement of placements) {
+                const [start, end] = placement.split('-').map(Number);
+                replacements.push({
+                    start, end, 
+                    html: `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0" class="emote">`
+                });
+            }
+        }
+    }
+    
+    // Sort replacements to process string sequentially safely
+    replacements.sort((a, b) => a.start - b.start);
+    
+    let finalHtml = "";
+    let currentIndex = 0;
+    
+    for (const rep of replacements) {
+        let textBefore = message.substring(currentIndex, rep.start);
+        finalHtml += parseThirdParty(textBefore) + rep.html;
+        currentIndex = rep.end + 1;
+    }
+    finalHtml += parseThirdParty(message.substring(currentIndex));
+    return finalHtml;
+}
+
+// --- TWITCH SETUP ---
+const twitchClient = new tmi.Client({ channels: [TWITCH_CHANNEL] });
+
+twitchClient.on("roomstate", (channel, state) => {
+    if (state["room-id"] && Object.keys(thirdPartyEmotes).length === 0) {
+        loadExternalEmotes(state["room-id"]);
     }
 });
 
-// --- CONFIGURATION ---
-const TWITCH_CHANNEL = process.env.TWITCH_CHANNEL; 
-const YOUTUBE_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
-
-// --- TWITCH SETUP ---
-const twitchClient = new tmi.Client({
-    channels: [TWITCH_CHANNEL]
+twitchClient.on('connected', () => {
+    io.emit('systemMessage', { 
+        text: '✅ Connected to Twitch Chat!', 
+        color: '#9146FF' 
+    });
 });
 
 twitchClient.connect();
 twitchClient.on('message', (channel, tags, message, self) => {
-    io.emit('chatMessage', {
+    handleIncomingMessage({
         platform: 'Twitch',
         author: tags['display-name'],
-        message: message,
-        color: tags['color'] || '#9146FF' // Default Twitch purple
+        message: formatTwitchMessage(message, tags.emotes),
+        color: tags['color'] || '#9146FF'
     });
 });
 
 // --- YOUTUBE SETUP ---
-// This will automatically find the active live stream for the given channel ID
-const ytChat = new LiveChat({ channelId: YOUTUBE_CHANNEL_ID });
+let ytChat;
+function startYouTube() {
+    ytChat = new LiveChat({ channelId: YOUTUBE_CHANNEL_ID });
 
-ytChat.on('chat', (chatItem) => {
-    // YouTube messages can contain emojis which are split into arrays, 
-    // this merges them back into a single text string.
-    const text = chatItem.message.map(m => m.text || m.emojiText || '').join(' ');
-    
-    io.emit('chatMessage', {
-        platform: 'YouTube',
-        author: chatItem.author.name,
-        message: text,
-        color: '#FF0000' // Default YouTube red
+    ytChat.on('start', () => {
+        io.emit('systemMessage', { 
+            text: '✅ Connected to YouTube Chat!', 
+            color: '#FF0000' 
+        });
     });
-});
 
-ytChat.start().catch(err => console.error("YouTube Chat Error. Are you live?:", err));
+    ytChat.on('chat', (chatItem) => {
+        let finalHtml = "";
+        chatItem.message.forEach(m => {
+            if (m.url) finalHtml += `<img src="${m.url}" class="emote"> `;
+            else if (m.text) finalHtml += parseThirdParty(m.text) + " ";
+        });
+        
+        handleIncomingMessage({
+            platform: 'YouTube',
+            author: chatItem.author.name,
+            message: finalHtml.trim(),
+            color: '#FF0000'
+        });
+    });
+
+    ytChat.on('error', (err) => {
+        console.log("YouTube chat dropped. Retrying in 60 seconds...");
+        if (ytChat) ytChat.stop();
+        setTimeout(startYouTube, 60000);
+    });
+
+    ytChat.start().catch(err => {
+        console.log("YouTube not live. Retrying in 60 seconds...");
+        setTimeout(startYouTube, 60000);
+    });
+}
+startYouTube();
 
 
-// --- LIVE SETTINGS SYNC ---
 io.on('connection', (socket) => {
-    // 1. When a browser connects, read the config and send it to them
     const configPath = path.join(__dirname, 'config.json');
-    let currentConfig = { theme: 'dark-pill', background: 'transparent' };
+    let currentConfig = { theme: 'dark-pill', background: 'transparent', mode: 'widget', mentions: true };
     
     try {
-        if (fs.existsSync(configPath)) {
-            currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-        }
-    } catch (err) {
-        console.error("Error reading config:", err);
-    }
+        if (fs.existsSync(configPath)) currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    } catch (err) { console.error(err); }
+    
+    currentConfig.streamerName = TWITCH_CHANNEL;
     
     socket.emit('loadConfig', currentConfig);
+    socket.emit('chatHistory', messageHistory);
 
-    // 2. Listen for changes from the user pressing 'T' in the browser
     socket.on('updateConfig', (newSettings) => {
         currentConfig = { ...currentConfig, ...newSettings };
-        
-        // Save to file so it remembers for next stream
         fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
-        
-        // Broadcast the new settings to ALL connected browsers (including OBS)
-        io.emit('loadConfig', currentConfig);
+        io.emit('loadConfig', currentConfig); 
     });
 });
 
 // --- START SERVER ---
-server.listen(3000, () => {
-    console.log('Chat widget running on http://localhost:3000');
+server.listen(PORT, () => {
+    console.log(`Chat widget running on http://localhost:${PORT}`);
 });

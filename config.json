@@ -1,4 +1,6 @@
 {
-  "theme": "dark-pill",
-  "background": "dark"
+  "theme": "glassmorphic",
+  "background": "dark",
+  "mode": "chat",
+  "streamerName": "frostymog"
 }
