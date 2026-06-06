@@ -7,7 +7,8 @@ A lightweight, self-hosted chat widget for OBS Studio that combines Twitch and Y
 * **Unified Chat:** Combines Twitch and YouTube into a single chronological feed.
 * **Native Emote Support:** Fetches and displays 7TV, BTTV, and FFZ emotes automatically.
 * **Auto-Reconnect:** Checks YouTube every 60 seconds if you aren't currently live.
-* **Two Modes:** * *Widget Mode:* Caps at 50 messages, hides scrollbars, transparent background (For OBS).
+* **Two Modes:** 
+  * *Widget Mode:* Caps at 50 messages, hides scrollbars, transparent background (For OBS).
   * *Chat Mode:* Keeps 1000 messages in memory, enables scrolling and "new message" alerts.
 * **Mention Highlighting:** Visually highlights messages that mention your Twitch username.
 * **Live Settings UI:** Press `T` in the browser to change themes and modes on the fly.
