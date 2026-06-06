@@ -1,0 +1,23 @@
+body { 
+    font-family: 'Impact', 'Arial Black', sans-serif; 
+    background: transparent; color: #ffff00; 
+    margin: 0; padding: 10px; font-size: 18px; overflow: hidden;
+    letter-spacing: 0.5px;
+}
+.message { 
+    margin-bottom: 12px; 
+    background: #000000; 
+    border: 3px solid #ffffff;
+    padding: 6px 12px; 
+    display: flex; align-items: center; gap: 10px;
+    image-rendering: pixelated;
+    animation: popIn 0.15s steps(3);
+}
+.platform-icon svg { width: 20px; height: 20px; }
+.author { color: #00ff00; text-transform: uppercase; }
+.text { color: #ffffff; word-break: break-word; }
+
+@keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}

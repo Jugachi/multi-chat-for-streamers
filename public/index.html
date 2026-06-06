@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Multi-Chat Widget</title>
+    <link id="theme-link" rel="stylesheet" href="/themes/dark-pill.css">
+    
+    <style>
+        /* Base styles for the settings menu */
+        #settings-menu {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #18181b;
+            color: #efeff1;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #3f3f46;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            font-family: sans-serif;
+            z-index: 9999;
+            width: 250px;
+        }
+        #settings-menu h3 { margin-top: 0; font-size: 16px; border-bottom: 1px solid #3f3f46; padding-bottom: 10px; }
+        .setting-row { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px;}
+        .setting-row select { background: #0e0e10; color: white; border: 1px solid #3f3f46; padding: 8px; border-radius: 5px; cursor: pointer; }
+        .hint { font-size: 12px; color: #adadb8; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    
+    <div id="settings-menu">
+        <h3>Widget Settings</h3>
+        <div class="setting-row">
+            <label>Theme</label>
+            <select id="theme-select">
+                <option value="dark-pill">Dark Pill</option>
+                <option value="cyberpunk">Cyberpunk</option>
+                <option value="glassmorphic">Glassmorphic</option>
+                <option value="retro-arcade">Retro Arcade</option>
+            </select>
+        </div>
+        <div class="setting-row">
+            <label>Background</label>
+            <select id="bg-select">
+                <option value="transparent">Transparent (For OBS)</option>
+                <option value="dark">Dark Mode (For Testing/Monitors)</option>
+            </select>
+        </div>
+        <div class="hint">Press 'T' to close</div>
+    </div>
+
+    <div id="chatbox"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const chatbox = document.getElementById('chatbox');
+        const settingsMenu = document.getElementById('settings-menu');
+        const themeSelect = document.getElementById('theme-select');
+        const bgSelect = document.getElementById('bg-select');
+        const themeLink = document.getElementById('theme-link');
+
+        // --- THEME & BACKGROUND LOGIC ---
+        
+        // Listen for config loading from the server
+        socket.on('loadConfig', (config) => {
+            // Apply Theme
+            themeLink.href = `/themes/${config.theme}.css`;
+            themeSelect.value = config.theme;
+            
+            // Apply Background
+            document.body.style.background = config.background === 'dark' ? '#0e0e10' : 'transparent';
+            bgSelect.value = config.background;
+        });
+
+        // Send changes back to the server when dropdowns change
+        themeSelect.addEventListener('change', (e) => {
+            socket.emit('updateConfig', { theme: e.target.value });
+        });
+        
+        bgSelect.addEventListener('change', (e) => {
+            socket.emit('updateConfig', { background: e.target.value });
+        });
+
+        // --- HOTKEY LOGIC ---
+        document.addEventListener('keydown', (e) => {
+            // If they press 'T' or 't'
+            if (e.key.toLowerCase() === 't') {
+                if (settingsMenu.style.display === 'none' || settingsMenu.style.display === '') {
+                    settingsMenu.style.display = 'block';
+                } else {
+                    settingsMenu.style.display = 'none';
+                }
+            }
+        });
+
+        // --- CHAT MESSAGE LOGIC ---
+        const icons = {
+            Twitch: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>`,
+            YouTube: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`
+        };
+
+        socket.on('chatMessage', (data) => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message';
+            const iconSvg = icons[data.platform] || '';
+
+            msgDiv.innerHTML = `
+                <div class="platform-icon" style="color: ${data.color}">${iconSvg}</div>
+                <span class="author" style="color: ${data.platform === 'Twitch' ? data.color : 'inherit'}">${data.author}:</span>
+                <span class="text">${data.message}</span>
+            `;
+            
+            chatbox.appendChild(msgDiv);
+            window.scrollTo(0, document.body.scrollHeight);
+
+            if (chatbox.children.length > 50) {
+                chatbox.removeChild(chatbox.firstChild);
+            }
+        });
+    </script>
+</body>
+</html>
