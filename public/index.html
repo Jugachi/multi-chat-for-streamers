@@ -87,9 +87,43 @@
             font-size: 14px;
             animation: fadeIn 0.3s ease-out;
         }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            background: rgba(20, 20, 25, 0.95);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            font-family: sans-serif;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #3f3f46;
+            animation: slideDown 0.3s ease-out, fadeOut 0.5s ease-in 4.5s forwards;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
     </style>
 </head>
 <body class="mode-widget">
+    <div id="toast-container"></div>
     
     <div id="settings-menu">
         <h3>Widget Settings</h3>
@@ -143,6 +177,10 @@
         let streamerName = "";
         let highlightMentions = true;
         const mentionSelect = document.getElementById('mention-select');
+        const urlParams = new URLSearchParams(window.location.search);
+        const overrideMode = urlParams.get('mode');
+        const overrideBg = urlParams.get('bg');
+        const overrideTheme = urlParams.get('theme');
 
         let currentMode = 'widget';
         let isUserScrolledUp = false;
@@ -170,14 +208,21 @@
             return msgDiv;
         }
 
+        // Toast System Message
         socket.on('systemMessage', (data) => {
-            const sysDiv = document.createElement('div');
-            sysDiv.className = 'system-msg';
-            sysDiv.style.color = data.color;
-            sysDiv.innerText = data.text;
+            // Check session storage so we only show the popup ONCE per tab session
+            if (sessionStorage.getItem('notified_' + data.id)) return;
+            sessionStorage.setItem('notified_' + data.id, 'true');
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.borderBottom = `3px solid ${data.color}`;
+            toast.innerText = data.text;
             
-            chatbox.appendChild(sysDiv);
-            window.scrollTo(0, document.body.scrollHeight);
+            document.getElementById('toast-container').appendChild(toast);
+            
+            // Remove from DOM after animation ends (5s total)
+            setTimeout(() => toast.remove(), 5000);
         });
 
         function appendMessage(data) {
@@ -198,15 +243,19 @@
         }
 
         socket.on('loadConfig', (config) => {
-            currentMode = config.mode || 'widget';
+            // Apply URL overrides if they exist, otherwise use the server config
+            currentMode = overrideMode || config.mode || 'widget';
             document.body.className = `mode-${currentMode}`;
             modeSelect.value = currentMode;
             if (currentMode === 'widget') scrollBtn.style.display = 'none';
 
-            themeLink.href = `/themes/${config.theme}.css`;
-            themeSelect.value = config.theme;
-            document.body.style.background = config.background === 'dark' ? '#0e0e10' : 'transparent';
-            bgSelect.value = config.background;
+            const activeTheme = overrideTheme || config.theme;
+            themeLink.href = `/themes/${activeTheme}.css`;
+            themeSelect.value = activeTheme;
+
+            const activeBg = overrideBg || config.background;
+            document.body.style.background = activeBg === 'dark' ? '#0e0e10' : 'transparent';
+            bgSelect.value = activeBg;
 
             streamerName = config.streamerName || "";
             highlightMentions = config.mentions !== false;

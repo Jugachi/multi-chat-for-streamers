@@ -37,6 +37,12 @@ sudo pacman -S nodejs npm
    node server.js
    ```
 2. **For OBS Studio:** Add a new "Browser Source", uncheck "Local File", and set the URL to `http://localhost:PORT` (default is `8080`). Set the width/height to your preference.
+   * **Pro Tip (URL Overrides):** You can force specific settings for your OBS source by adding query parameters to the URL. This allows you to lock OBS into a transparent widget layout, while you safely change themes or use the full "Chat Mode" in your personal browser!
+   * **Example URL:** `http://localhost:8080/?mode=widget&bg=transparent&theme=glassmorphic`
+   * **Available Parameters:**
+     * `mode=` (`widget` or `chat`)
+     * `bg=` (`transparent` or `dark`)
+     * `theme=` (`dark-pill`, `cyberpunk`, `glassmorphic`, or `retro-arcade`)
 3. **For Moderation/Reading:** Open a regular web browser and navigate to the same local URL. Press T to open the settings menu and switch to "Chat Mode" and "Dark Background".
 
 *(Note: Changes made in the web browser will automatically and instantly update the widget running inside OBS Studio without needing a refresh!)*

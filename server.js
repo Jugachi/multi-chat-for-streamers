@@ -29,6 +29,7 @@ function handleIncomingMessage(msgData) {
 const TWITCH_CHANNEL = process.env.TWITCH_CHANNEL; 
 const YOUTUBE_CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
 const PORT = process.env.PORT || 8080;
+let systemStatus = { twitch: false, youtube: false };
 
 const thirdPartyEmotes = {};
 
@@ -117,9 +118,11 @@ twitchClient.on("roomstate", (channel, state) => {
 });
 
 twitchClient.on('connected', () => {
+    systemStatus.twitch = true;
     io.emit('systemMessage', { 
         text: '✅ Connected to Twitch Chat!', 
-        color: '#9146FF' 
+        color: '#9146FF',
+        id: 'twitch' 
     });
 });
 
@@ -139,9 +142,11 @@ function startYouTube() {
     ytChat = new LiveChat({ channelId: YOUTUBE_CHANNEL_ID });
 
     ytChat.on('start', () => {
+        systemStatus.youtube = true;
         io.emit('systemMessage', { 
             text: '✅ Connected to YouTube Chat!', 
-            color: '#FF0000' 
+            color: '#FF0000',
+            id: 'youtube'
         });
     });
 
@@ -160,7 +165,8 @@ function startYouTube() {
         });
     });
 
-    ytChat.on('error', (err) => {
+        ytChat.on('error', (err) => {
+        systemStatus.youtube = false;
         console.log("YouTube chat dropped. Retrying in 60 seconds...");
         if (ytChat) ytChat.stop();
         setTimeout(startYouTube, 60000);
@@ -186,6 +192,9 @@ io.on('connection', (socket) => {
     
     socket.emit('loadConfig', currentConfig);
     socket.emit('chatHistory', messageHistory);
+
+    if (systemStatus.twitch) socket.emit('systemMessage', { text: '✅ Connected to Twitch Chat!', color: '#9146FF', id: 'twitch' });
+    if (systemStatus.youtube) socket.emit('systemMessage', { text: '✅ Connected to YouTube Chat!', color: '#FF0000', id: 'youtube' });
 
     socket.on('updateConfig', (newSettings) => {
         currentConfig = { ...currentConfig, ...newSettings };
