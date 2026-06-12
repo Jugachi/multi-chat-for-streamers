@@ -1,6 +1,7 @@
 {
-  "theme": "cyberpunk",
+  "theme": "glassmorphic",
   "background": "dark",
-  "mode": "chat",
-  "streamerName": "jugachi"
+  "mode": "streamer",
+  "streamerName": "jugachi",
+  "activityPos": "right"
 }

@@ -1,19 +1,103 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Multi-Chat Widget</title>
     <link id="theme-link" rel="stylesheet" href="/themes/dark-pill.css">
-    
+
     <style>
         /* Global structure overrides depending on the mode */
-        body.mode-widget { overflow: hidden !important; }
-        body.mode-chat { overflow-y: auto !important; scroll-behavior: smooth; }
+        body.mode-widget {
+            overflow: hidden !important;
+        }
+
+        body.mode-chat {
+            overflow-y: auto !important;
+            scroll-behavior: smooth;
+        }
 
         /* Custom Scrollbar styling for Chat Mode */
-        body.mode-chat::-webkit-scrollbar { width: 8px; }
-        body.mode-chat::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-        body.mode-chat::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-        body.mode-chat::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+        body.mode-chat::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        body.mode-chat::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        body.mode-chat::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        body.mode-chat::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Default Layout */
+        #main-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #chatbox {
+            flex: 1;
+            overflow-y: hidden;
+            padding-bottom: 20px;
+        }
+
+        #activity-feed {
+            display: none;
+        }
+
+        /* STREAMER MODE LAYOUT (Side by Side) */
+        body.mode-streamer #chatbox {
+            overflow-y: auto !important;
+        }
+
+        body.mode-streamer #activity-feed {
+            display: flex;
+            flex-direction: column;
+            width: 320px;
+            /* Slightly wider */
+            background: rgba(15, 15, 18, 0.95);
+            border-left: 2px solid #3f3f46;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        /* Swap to Left Side */
+        body.activity-left #activity-feed {
+            order: -1;
+            /* Puts it before the chatbox */
+            border-left: none;
+            border-right: 2px solid #3f3f46;
+        }
+
+        .activity-header {
+            font-weight: bold;
+            text-align: center;
+            color: #9146FF;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #3f3f46;
+            margin-bottom: 15px;
+            font-family: sans-serif;
+            font-size: 18px;
+        }
+
+        .activity-item {
+            background: #18181b;
+            padding: 14px;
+            margin-bottom: 14px;
+            border-radius: 8px;
+            font-size: 15px;
+            line-height: 1.4;
+            font-family: sans-serif;
+            border-left: 4px solid #9146FF;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.3s ease;
+        }
 
         /* Settings Menu Styles */
         #settings-menu {
@@ -26,15 +110,43 @@
             padding: 20px;
             border-radius: 10px;
             border: 1px solid #3f3f46;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             font-family: sans-serif;
             z-index: 9999;
             width: 250px;
         }
-        #settings-menu h3 { margin-top: 0; font-size: 16px; border-bottom: 1px solid #3f3f46; padding-bottom: 10px; }
-        .setting-row { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; font-family: sans-serif;}
-        .setting-row select { background: #0e0e10; color: white; border: 1px solid #3f3f46; padding: 8px; border-radius: 5px; cursor: pointer; }
-        .hint { font-size: 12px; color: #adadb8; text-align: center; margin-top: 10px; font-family: sans-serif;}
+
+        #settings-menu h3 {
+            margin-top: 0;
+            font-size: 16px;
+            border-bottom: 1px solid #3f3f46;
+            padding-bottom: 10px;
+        }
+
+        .setting-row {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-family: sans-serif;
+        }
+
+        .setting-row select {
+            background: #0e0e10;
+            color: white;
+            border: 1px solid #3f3f46;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #adadb8;
+            text-align: center;
+            margin-top: 10px;
+            font-family: sans-serif;
+        }
 
         /* Floating Scroll-to-Bottom Button */
         #scroll-btn {
@@ -51,20 +163,34 @@
             font-family: sans-serif;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             z-index: 9998;
             animation: bounce 2s infinite;
         }
+
         @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); }
-            40% { transform: translate(-50%, -6px); }
-            60% { transform: translate(-50%, -3px); }
+
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translate(-50%, 0);
+            }
+
+            40% {
+                transform: translate(-50%, -6px);
+            }
+
+            60% {
+                transform: translate(-50%, -3px);
+            }
         }
 
         /* Universal Emote Styling */
-        .emote { 
-            height: 28px; 
-            vertical-align: middle; 
+        .emote {
+            height: 28px;
+            vertical-align: middle;
             margin: 0 2px;
         }
 
@@ -82,7 +208,7 @@
             font-weight: bold;
             padding: 8px;
             margin: 10px 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             border-radius: 8px;
             font-size: 14px;
             animation: fadeIn 0.3s ease-out;
@@ -100,38 +226,149 @@
             gap: 10px;
             pointer-events: none;
         }
+
         .toast {
             background: rgba(20, 20, 25, 0.95);
             color: white;
             padding: 10px 20px;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
             font-family: sans-serif;
             font-weight: bold;
             text-align: center;
             border: 1px solid #3f3f46;
             animation: slideDown 0.3s ease-out, fadeOut 0.5s ease-in 4.5s forwards;
         }
+
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
+
         @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* Setup Modal & Stream Switcher */
+        #setup-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 10, 15, 0.98);
+            z-index: 100000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: sans-serif;
+            color: white;
+            text-align: center;
+        }
+
+        .setup-box {
+            background: #18181b;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #9146FF;
+            box-shadow: 0 10px 30px rgba(145, 70, 255, 0.2);
+            width: 350px;
+        }
+
+        .stream-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .stream-input-group input {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #3f3f46;
+            background: #0e0e10;
+            color: white;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .action-btn {
+            background: #9146FF;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .action-btn:hover {
+            background: #a970ff;
+        }
+
+        .menu-divider {
+            height: 1px;
+            background: #3f3f46;
+            margin: 15px 0;
         }
     </style>
 </head>
+
 <body class="mode-widget">
     <div id="toast-container"></div>
-    
+
+    <div id="setup-modal">
+        <div class="setup-box">
+            <h2 style="margin-top:0; color:#9146FF;">Welcome to Multi-Chat!</h2>
+            <p style="font-size: 14px; color: #adadb8;">Connect your streams to get started. You can change these later.
+            </p>
+            <div class="stream-input-group">
+                <label>Twitch Username</label>
+                <input type="text" id="setup-twitch" placeholder="e.g. jugachi">
+            </div>
+            <div class="stream-input-group">
+                <label>YouTube (Channel ID or Live URL)</label>
+                <input type="text" id="setup-youtube" placeholder="UC... or https://youtu.be/...">
+            </div>
+            <button class="action-btn" id="setup-btn">Connect & Save</button>
+        </div>
+    </div>
+
     <div id="settings-menu">
         <h3>Widget Settings</h3>
+        <div class="stream-input-group">
+            <label style="font-size:12px; color:#9146FF; font-weight:bold;">Active Twitch</label>
+            <input type="text" id="menu-twitch" placeholder="Username">
+        </div>
+        <div class="stream-input-group">
+            <label style="font-size:12px; color:#FF0000; font-weight:bold;">Active YouTube</label>
+            <input type="text" id="menu-youtube" placeholder="Channel ID or Live URL">
+        </div>
+        <button class="action-btn" id="menu-connect-btn" style="padding: 8px;">Switch Streams</button>
+        <div class="menu-divider"></div>
         <div class="setting-row">
             <label>Display Mode</label>
             <select id="mode-select">
-                <option value="widget">Widget Mode (Clean/OBS)</option>
-                <option value="chat">Chat Mode (1000 Msg History)</option>
+                <option value="widget">Widget Mode (OBS)</option>
+                <option value="chat">Chat Mode</option>
+                <option value="streamer">Streamer Mode (Chat + Activity Split)</option>
             </select>
         </div>
         <div class="setting-row">
@@ -157,12 +394,25 @@
                 <option value="dark">Dark Mode (For Testing/Monitors)</option>
             </select>
         </div>
+        <div class="setting-row">
+            <label>Activity Position</label>
+            <select id="pos-select">
+                <option value="right">Right Side</option>
+                <option value="left">Left Side</option>
+            </select>
+        </div>
         <div class="hint">Press 'T' to close</div>
     </div>
 
     <button id="scroll-btn">⬇ New Messages Below</button>
 
-    <div id="chatbox"></div>
+    <div id="main-container">
+        <div id="chatbox"></div>
+        <div id="activity-feed">
+            <div class="activity-header">Recent Activity</div>
+            <div id="activity-list"></div>
+        </div>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -174,16 +424,26 @@
         const bgSelect = document.getElementById('bg-select');
         const themeLink = document.getElementById('theme-link');
         const scrollBtn = document.getElementById('scroll-btn');
-        let streamerName = "";
-        let highlightMentions = true;
         const mentionSelect = document.getElementById('mention-select');
         const urlParams = new URLSearchParams(window.location.search);
         const overrideMode = urlParams.get('mode');
         const overrideBg = urlParams.get('bg');
         const overrideTheme = urlParams.get('theme');
+        const posSelect = document.getElementById('pos-select');
+
+        // Setup Elements
+        const setupModal = document.getElementById('setup-modal');
+        const setupTwitch = document.getElementById('setup-twitch');
+        const setupYoutube = document.getElementById('setup-youtube');
+        const setupBtn = document.getElementById('setup-btn');
+        const menuTwitch = document.getElementById('menu-twitch');
+        const menuYoutube = document.getElementById('menu-youtube');
+        const menuConnectBtn = document.getElementById('menu-connect-btn');
 
         let currentMode = 'widget';
         let isUserScrolledUp = false;
+        let streamerName = "";
+        let highlightMentions = true;
 
         const icons = {
             Twitch: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>`,
@@ -193,7 +453,7 @@
         function createMessageElement(data) {
             const msgDiv = document.createElement('div');
             msgDiv.className = 'message';
-            
+
             // Check if mentions are enabled AND the message contains your name
             if (highlightMentions && streamerName && data.message.toLowerCase().includes(streamerName.toLowerCase())) {
                 msgDiv.classList.add('mention-highlight');
@@ -218,9 +478,9 @@
             toast.className = 'toast';
             toast.style.borderBottom = `3px solid ${data.color}`;
             toast.innerText = data.text;
-            
+
             document.getElementById('toast-container').appendChild(toast);
-            
+
             // Remove from DOM after animation ends (5s total)
             setTimeout(() => toast.remove(), 5000);
         });
@@ -228,38 +488,62 @@
         function appendMessage(data) {
             const msgElement = createMessageElement(data);
             chatbox.appendChild(msgElement);
-            
+
             const maxAllowed = (currentMode === 'widget') ? 50 : 1000;
             while (chatbox.children.length > maxAllowed) {
                 chatbox.removeChild(chatbox.firstChild);
             }
 
-            // Auto-scroll logic
+            // Auto-scroll logic depending on mode
             if (!isUserScrolledUp || currentMode === 'widget') {
-                window.scrollTo(0, document.body.scrollHeight);
-            } else if (currentMode === 'chat') {
+                if (currentMode === 'streamer') {
+                    chatbox.scrollTop = chatbox.scrollHeight; // Scroll inner div
+                } else {
+                    window.scrollTo(0, document.body.scrollHeight); // Scroll window
+                }
+            } else if (currentMode === 'chat' || currentMode === 'streamer') {
                 scrollBtn.style.display = 'block';
             }
         }
 
         socket.on('loadConfig', (config) => {
-            // Apply URL overrides if they exist, otherwise use the server config
+            // Apply URL overrides first so we know the true state
             currentMode = overrideMode || config.mode || 'widget';
+
+            if (config.needsSetup && overrideMode !== 'widget') {
+                setupModal.style.display = 'flex';
+            } else {
+                setupModal.style.display = 'none';
+            }
+
+            if (config.activeTwitch) menuTwitch.value = config.activeTwitch;
+            if (config.activeYouTube) menuYoutube.value = config.activeYouTube;
+
+            // Apply Mode Settings
             document.body.className = `mode-${currentMode}`;
             modeSelect.value = currentMode;
             if (currentMode === 'widget') scrollBtn.style.display = 'none';
 
+            // Apply Theme Settings
             const activeTheme = overrideTheme || config.theme;
             themeLink.href = `/themes/${activeTheme}.css`;
             themeSelect.value = activeTheme;
 
+            // Apply Background Settings
             const activeBg = overrideBg || config.background;
             document.body.style.background = activeBg === 'dark' ? '#0e0e10' : 'transparent';
             bgSelect.value = activeBg;
 
+            // Apply Mentions Settings
             streamerName = config.streamerName || "";
             highlightMentions = config.mentions !== false;
             mentionSelect.value = highlightMentions.toString();
+
+            // Apply Activity Position Settings
+            const activePos = urlParams.get('pos') || config.activityPos || 'right';
+            if (activePos === 'left') document.body.classList.add('activity-left');
+            else document.body.classList.remove('activity-left');
+            if (posSelect) posSelect.value = activePos;
         });
 
         // Load complete server-side history cache upon opening/refreshing tab
@@ -281,7 +565,7 @@
         // Detect manual scrolling up
         window.addEventListener('scroll', () => {
             if (currentMode !== 'chat') return;
-            
+
             // Check if user is away from bottom by more than 80px
             const distanceToBottom = document.body.scrollHeight - window.innerHeight - window.scrollY;
             isUserScrolledUp = distanceToBottom > 80;
@@ -298,12 +582,98 @@
             isUserScrolledUp = false;
         });
 
-        // Toggle configuration menu with 'T' key
+        // Toggle configuration menu with 'T' key, and position with L/R
         document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 't') {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+            const key = e.key.toLowerCase();
+
+            if (key === 't') {
                 settingsMenu.style.display = (settingsMenu.style.display === 'block') ? 'none' : 'block';
             }
+
+            if (currentMode === 'streamer') {
+                if (key === 'l') socket.emit('updateConfig', { activityPos: 'left' });
+                if (key === 'r') socket.emit('updateConfig', { activityPos: 'right' });
+            }
         });
+
+        const activityList = document.getElementById('activity-list');
+
+        function appendActivity(data) {
+            const div = document.createElement('div');
+            div.className = 'activity-item';
+            div.innerText = data.text;
+            activityList.prepend(div); // Add to the TOP of the list
+
+            // Keep maximum 100 activities in the DOM
+            while (activityList.children.length > 100) {
+                activityList.removeChild(activityList.lastChild);
+            }
+        }
+
+        socket.on('activityMessage', (data) => {
+            appendActivity(data);
+        });
+
+        socket.on('activityHistory', (history) => {
+            activityList.innerHTML = '';
+            // Reverse so newest is on top when appending
+            [...history].reverse().forEach(data => appendActivity(data));
+        });
+
+        // Detect manual scrolling up on the Window (Chat Mode)
+        window.addEventListener('scroll', () => {
+            if (currentMode !== 'chat') return;
+            const distanceToBottom = document.body.scrollHeight - window.innerHeight - window.scrollY;
+            isUserScrolledUp = distanceToBottom > 80;
+            if (!isUserScrolledUp) scrollBtn.style.display = 'none';
+        });
+
+        // Detect manual scrolling up on the Chatbox (Streamer Mode)
+        chatbox.addEventListener('scroll', () => {
+            if (currentMode !== 'streamer') return;
+            const distanceToBottom = chatbox.scrollHeight - chatbox.clientHeight - chatbox.scrollTop;
+            isUserScrolledUp = distanceToBottom > 80;
+            if (!isUserScrolledUp) scrollBtn.style.display = 'none';
+        });
+
+        // Click handler for the floating snap-to-bottom button
+        scrollBtn.addEventListener('click', () => {
+            if (currentMode === 'streamer') chatbox.scrollTop = chatbox.scrollHeight;
+            else window.scrollTo(0, document.body.scrollHeight);
+
+            scrollBtn.style.display = 'none';
+            isUserScrolledUp = false;
+        });
+
+        // Event Listener for the Position Dropdown
+        if (posSelect) {
+            posSelect.addEventListener('change', (e) => socket.emit('updateConfig', { activityPos: e.target.value }));
+        }
+
+        // Handle Setup Modal Submit
+        setupBtn.addEventListener('click', () => {
+            const t = setupTwitch.value.trim();
+            const y = setupYoutube.value.trim();
+            if (!t && !y) return alert("Please enter at least one channel!");
+            socket.emit('updateStreams', { twitch: t, youtube: y });
+            setupModal.style.display = 'none';
+        });
+
+        // Handle Settings Menu Stream Switch Submit
+        menuConnectBtn.addEventListener('click', () => {
+            const t = menuTwitch.value.trim();
+            const y = menuYoutube.value.trim();
+
+            sessionStorage.removeItem('notified_twitch');
+            sessionStorage.removeItem('notified_youtube');
+            socket.emit('updateStreams', { twitch: t, youtube: y });
+            menuConnectBtn.innerText = "Connecting...";
+            setTimeout(() => menuConnectBtn.innerText = "Switch Streams", 1500);
+        });
+
     </script>
 </body>
+
 </html>
