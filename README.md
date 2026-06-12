@@ -15,7 +15,26 @@ A lightweight, self-hosted chat widget for OBS Studio that combines Twitch and Y
 * **Live Settings UI:** Press `T` in the browser to change themes and modes on the fly.
 
 ## Prerequisites
-Ensure Node.js is installed on your Arch system:
+Ensure Node.js and npm are installed on your system before proceeding.
+
+**Windows:**
+* Download and install the "LTS" (Long Term Support) version from the [official Node.js website](https://nodejs.org/).
+
+**macOS:**
+* Download the installer from the [official Node.js website](https://nodejs.org/).
+
+**Debian / Ubuntu / Pop!_OS:**
+```bash
+sudo apt update
+sudo apt install nodejs npm
+```
+
+**Fedora:**
+```bash
+sudo dnf install nodejs npm
+```
+
+**Arch:**
 ```bash
 sudo pacman -S nodejs npm
 ```
