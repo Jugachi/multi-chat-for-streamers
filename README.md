@@ -10,6 +10,7 @@ A lightweight, self-hosted chat widget for OBS Studio that combines Twitch and Y
 * **Two Modes:** 
   * *Widget Mode:* Caps at 50 messages, hides scrollbars, transparent background (For OBS).
   * *Chat Mode:* Keeps 1000 messages in memory, enables scrolling and "new message" alerts.
+  * *Streamer Mode:* Splits the screen to show Chat and a dedicated Twitch Activity feed (Subs, Gifts, Cheers, Raids) side-by-side.
 * **Mention Highlighting:** Visually highlights messages that mention your Twitch username.
 * **Live Settings UI:** Press `T` in the browser to change themes and modes on the fly.
 
@@ -43,6 +44,7 @@ sudo pacman -S nodejs npm
      * `mode=` (`widget` or `chat`)
      * `bg=` (`transparent` or `dark`)
      * `theme=` (`dark-pill`, `cyberpunk`, `glassmorphic`, or `retro-arcade`)
+     * `pos=` (`left` or `right` - controls Activity Feed position in Streamer Mode)
 3. **For Moderation/Reading:** Open a regular web browser and navigate to the same local URL. Press T to open the settings menu and switch to "Chat Mode" and "Dark Background".
 
 *(Note: Changes made in the web browser will automatically and instantly update the widget running inside OBS Studio without needing a refresh!)*
