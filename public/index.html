@@ -11,6 +11,14 @@
             overflow: hidden !important;
         }
 
+        body.mode-widget #chatbox::-webkit-scrollbar {
+            display: none;
+        }
+        body.mode-widget #chatbox {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
         body.mode-chat {
             overflow-y: auto !important;
             scroll-behavior: smooth;
@@ -43,8 +51,9 @@
 
         #chatbox {
             flex: 1;
-            overflow-y: hidden;
+            overflow-y: auto;
             padding-bottom: 20px;
+            scroll-behavior: smooth;
         }
 
         #activity-feed {
@@ -494,14 +503,9 @@
                 chatbox.removeChild(chatbox.firstChild);
             }
 
-            // Auto-scroll logic depending on mode
             if (!isUserScrolledUp || currentMode === 'widget') {
-                if (currentMode === 'streamer') {
-                    chatbox.scrollTop = chatbox.scrollHeight; // Scroll inner div
-                } else {
-                    window.scrollTo(0, document.body.scrollHeight); // Scroll window
-                }
-            } else if (currentMode === 'chat' || currentMode === 'streamer') {
+                chatbox.scrollTop = chatbox.scrollHeight; 
+            } else {
                 scrollBtn.style.display = 'block';
             }
         }
@@ -563,11 +567,11 @@
         mentionSelect.addEventListener('change', (e) => socket.emit('updateConfig', { mentions: e.target.value === 'true' }));
 
         // Detect manual scrolling up
-        window.addEventListener('scroll', () => {
-            if (currentMode !== 'chat') return;
+        chatbox.addEventListener('scroll', () => {
+            if (currentMode === 'widget') return; // Ignore manual scroll tracking in widget mode
 
-            // Check if user is away from bottom by more than 80px
-            const distanceToBottom = document.body.scrollHeight - window.innerHeight - window.scrollY;
+            // Calculate how far the user is from the bottom of the chatbox
+            const distanceToBottom = chatbox.scrollHeight - chatbox.clientHeight - chatbox.scrollTop;
             isUserScrolledUp = distanceToBottom > 80;
 
             if (!isUserScrolledUp) {
@@ -577,7 +581,7 @@
 
         // Click handler for the floating snap-to-bottom button
         scrollBtn.addEventListener('click', () => {
-            window.scrollTo(0, document.body.scrollHeight);
+            chatbox.scrollTop = chatbox.scrollHeight;
             scrollBtn.style.display = 'none';
             isUserScrolledUp = false;
         });
