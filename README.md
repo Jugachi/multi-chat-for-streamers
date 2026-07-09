@@ -15,12 +15,14 @@ A lightweight, self-hosted chat widget for OBS Studio that combines Twitch and Y
 * **Live Settings UI:** Press `T` in the browser to change themes and modes on the fly.
 
 ## Quick Start (No Node.js required)
-Grab a ready-to-run desktop app from the [Releases](../../releases) page — no Node.js install needed, no terminal, just a normal app window:
+All releases are published on the [Releases](../../releases) tab of this GitHub repo — grab a ready-to-run desktop app from there, no Node.js install needed, no terminal, just a normal app window:
 * **Windows:** `Multi-Chat 1.0.0.exe` — a portable app, just double-click it (no installer).
 * **macOS:** `Multi-Chat-1.0.0-mac.zip` (Intel) or `Multi-Chat-1.0.0-arm64-mac.zip` (Apple Silicon) — unzip and open `Multi-Chat.app`. Since the build isn't code-signed, right-click it and choose "Open" the first time (or run `xattr -d com.apple.quarantine "Multi-Chat.app"`) to get past Gatekeeper.
 * **Linux:** `Multi-Chat-1.0.0.AppImage` (or `-arm64.AppImage`) — `chmod +x` it, then double-click or run it.
 
 A window opens showing the widget itself. If you haven't set a Twitch or YouTube channel yet, it'll show the first-time setup popup automatically so you can connect one — just fill it in right there in the window. Settings are stored per-user (`%APPDATA%\multi-chat` on Windows, `~/Library/Application Support/multi-chat` on macOS, `~/.config/multi-chat` on Linux), so they persist across app updates.
+
+**Port:** the released app serves the widget on **port `41414`** (`http://localhost:41414`). If you instead run the project from source with Node.js (see below), it defaults to **port `3000`**. Keep this in mind when pointing OBS at the widget — see [Usage](#usage).
 
 Skip ahead to [Usage](#usage) to point OBS at the widget. If you'd rather run it with Node.js directly, or want to build the app yourself, keep reading.
 
@@ -63,9 +65,10 @@ sudo pacman -S nodejs npm
    ```bash
    node server.js
    ```
-2. **For OBS Studio:** Add a new "Browser Source", uncheck "Local File", and set the URL to `http://localhost:PORT` (default is `41414`). Set the width/height to your preference.
+2. **For OBS Studio:** Add a new "Browser Source", uncheck "Local File", and set the URL to `http://localhost:PORT`.
+   * **Port:** use `41414` if you're running the released desktop app from the [Releases](../../releases) tab, or `3000` if you're running it from source with `node server.js` (as in step 1 above).
    * **Pro Tip (URL Overrides):** You can force specific settings for your OBS source by adding query parameters to the URL. This allows you to lock OBS into a transparent widget layout, while you safely change themes or use the full "Chat Mode" in your personal browser!
-   * **Example URL:** `http://localhost:41414/?mode=widget&bg=transparent&theme=glassmorphic`
+   * **Example URL:** `http://localhost:3000/?mode=widget&bg=transparent&theme=glassmorphic` (swap in `41414` if you're using the released app)
    * **Available Parameters:**
      * `mode=` (`widget` or `chat`)
      * `bg=` (`transparent` or `dark`)
