@@ -3,15 +3,44 @@ const http = require('http');
 const { Server } = require('socket.io');
 const tmi = require('tmi.js');
 const { LiveChat } = require('youtube-chat');
-require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+
+// 'open' ships as an ESM-only package; dynamic import keeps this CJS file compatible with it.
+function openBrowser(url) {
+    return import('open').then(({ default: open }) => open(url));
+}
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static('public'));
+// When packaged with pkg, __dirname points inside the read-only snapshot, so
+// config.json must live next to the executable instead. Under Electron, the
+// app is read-only (asar) and its install folder isn't reliably writable
+// (e.g. Program Files on Windows), so use the standard per-user data folder.
+const isElectron = !!process.versions.electron;
+const isPkg = typeof process.pkg !== 'undefined';
+const baseDir = isElectron
+    ? require('electron').app.getPath('userData')
+    : isPkg
+        ? path.dirname(process.execPath)
+        : __dirname;
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+const configPath = path.join(baseDir, 'config.json');
+const defaultConfig = { theme: 'dark-pill', background: 'transparent', mode: 'widget', mentions: true };
+
+function loadConfig() {
+    try { if (fs.existsSync(configPath)) return { ...defaultConfig, ...JSON.parse(fs.readFileSync(configPath, 'utf8')) }; }
+    catch (err) { console.error(err); }
+    return { ...defaultConfig };
+}
+
+function writeConfig(cfg) {
+    fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2));
+}
 
 // Cache up to 1000 messages in memory
 let messageHistory = [];
@@ -34,28 +63,32 @@ function handleActivity(data) {
     io.emit('activityMessage', data);
 }
 
-let activeTwitch = process.env.TWITCH_CHANNEL || '';
-let activeYouTube = process.env.YOUTUBE_CHANNEL_ID || process.env.YOUTUBE_LIVE_ID || '';
+let startupConfig = loadConfig();
+let activeTwitch = startupConfig.twitchChannel || '';
+let activeYouTube = startupConfig.youtubeChannel || '';
 let systemStatus = { twitch: false, youtube: false };
-let PORT = process.env.PORT || 8080;
+let PORT = startupConfig.port || 41414;
 let thirdPartyEmotes = {};
 
-function saveEnv(twitch, youtube) {
-    let envData = `PORT=${process.env.PORT || 8080}\n`;
-    if (twitch) envData += `TWITCH_CHANNEL=${twitch}\n`;
+function saveStreamConfig(twitch, youtube) {
+    let cfg = loadConfig();
+    cfg.twitchChannel = twitch || '';
 
     if (youtube) {
         if (youtube.startsWith('UC') && youtube.length === 24) {
-            envData += `YOUTUBE_CHANNEL_ID=${youtube}\n`;
+            cfg.youtubeChannel = youtube;
         } else {
             // Extract Video ID if it's a URL
             let videoId = youtube;
             const match = youtube.match(/(?:v=|youtu\.be\/)([^&?]+)/);
             if (match) videoId = match[1];
-            envData += `YOUTUBE_LIVE_ID=${videoId}\n`;
+            cfg.youtubeChannel = videoId;
         }
+    } else {
+        cfg.youtubeChannel = '';
     }
-    fs.writeFileSync('.env', envData);
+
+    writeConfig(cfg);
 }
 
 async function loadExternalEmotes(roomId) {
@@ -233,39 +266,107 @@ function connectYouTube(input) {
     });
 }
 
-// Start initial connections if .env data exists
-if (activeTwitch) connectTwitch(activeTwitch);
-if (activeYouTube) connectYouTube(activeYouTube);
+// --- DEV MODE (fake chat spam for testing without real streams) ---
+const isDevMode = process.argv.includes('--dev');
+
+function startDevMode() {
+    console.log('\n🧪 DEV MODE: Simulating fake Twitch/YouTube chat activity...\n');
+    systemStatus.twitch = true;
+    systemStatus.youtube = true;
+
+    const usernames = [
+        'PixelPanda', 'NoScopeNancy', 'ChatGoblin', 'xX_Speedrunner_Xx', 'CouchPotato99',
+        'GigaChad_Gaming', 'lurker_larry', 'MoonlitMage', 'BasementDweller', 'QuesoQueen',
+        'YeetMaster3000', 'SleepyOtter', 'CrtHum', 'FrostyMemes', 'ZeroLatencyZane',
+        'WanderingWizard', 'ToastedToast', 'GlitchInTheMatrix', 'PogChampion', 'NoodleArms',
+        'Sir_Loses_Alot', 'CaffeineOverdose', 'DankMemeDealer', 'ButtonMasher42', 'EmoteSpammer',
+        'ShyViewer', 'LagSwitchLuke', 'RainbowRaptor', 'BoxOfFrogs', 'InfiniteRespawn'
+    ];
+
+    const messages = [
+        'LETS GOOO 🔥', 'wait what just happened lol', 'W stream', 'chat is this real',
+        'POGGERS', 'no shot 💀', 'first time catching this live!', 'gg', 'the algorithm brought me here',
+        'can we get a hype train going', 'this is peak content', 'clip that clip THAT',
+        'monkaS', 'im dead 😂😂😂', 'hello from Germany!', 'how long has this stream been going',
+        'ratio', 'been here since day one 🙌', 'wait thats actually smart', 'sending good vibes',
+        'anyone else lagging or just me', 'the music slaps', '5Head strategy right there',
+        'F in the chat', 'lurking but had to say hi', 'okay THAT was clean', 'chat please calm down',
+        'is this a rerun', 'new sub who dis', 'take my bits 💎'
+    ];
+
+    const colors = [
+        '#FF4500', '#1E90FF', '#00FF7F', '#9146FF', '#FF69B4', '#FFD700',
+        '#00CED1', '#FF6347', '#7B68EE', '#ADFF2F', '#DAA520', '#20B2AA'
+    ];
+
+    function randomItem(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function sendFakeMessage() {
+        const platform = Math.random() < 0.7 ? 'Twitch' : 'YouTube';
+        handleIncomingMessage({
+            platform,
+            author: randomItem(usernames),
+            message: randomItem(messages),
+            color: platform === 'Twitch' ? randomItem(colors) : '#FF0000'
+        });
+        setTimeout(sendFakeMessage, 400 + Math.random() * 1600);
+    }
+
+    const activityGenerators = [
+        () => ({ type: 'sub', text: `⭐ ${randomItem(usernames)} just subscribed!` }),
+        () => ({ type: 'resub', text: `🌟 ${randomItem(usernames)} resubscribed for ${1 + Math.floor(Math.random() * 24)} months!` }),
+        () => ({ type: 'gift', text: `🎁 ${randomItem(usernames)} gifted a sub to ${randomItem(usernames)}!` }),
+        () => ({ type: 'bits', text: `💎 ${randomItem(usernames)} cheered ${randomItem([100, 250, 500, 1000, 5000])} bits!` }),
+        () => ({ type: 'raid', text: `🚀 ${randomItem(usernames)} is raiding with ${1 + Math.floor(Math.random() * 200)} viewers!` })
+    ];
+
+    function sendFakeActivity() {
+        handleActivity(randomItem(activityGenerators)());
+        setTimeout(sendFakeActivity, 4000 + Math.random() * 8000);
+    }
+
+    sendFakeMessage();
+    sendFakeActivity();
+}
+
+// Start initial connections if config data exists
+if (isDevMode) {
+    startDevMode();
+} else {
+    if (activeTwitch) connectTwitch(activeTwitch);
+    if (activeYouTube) connectYouTube(activeYouTube);
+}
 
 // --- SOCKET CONNECTION ---
 io.on('connection', (socket) => {
-    const configPath = path.join(__dirname, 'config.json');
-    let currentConfig = { theme: 'dark-pill', background: 'transparent', mode: 'widget', mentions: true };
-
-    try { if (fs.existsSync(configPath)) currentConfig = JSON.parse(fs.readFileSync(configPath, 'utf8')); }
-    catch (err) { console.error(err); }
-
+    let currentConfig = loadConfig();
     currentConfig.streamerName = activeTwitch;
 
     // Check if First Time Setup is required
-    const needsSetup = !fs.existsSync('.env') && !activeTwitch && !activeYouTube;
+    const needsSetup = !isDevMode && !activeTwitch && !activeYouTube;
 
     socket.emit('loadConfig', { ...currentConfig, needsSetup, activeTwitch, activeYouTube });
     socket.emit('chatHistory', messageHistory);
     socket.emit('activityHistory', activityHistory);
 
-    if (systemStatus.twitch) socket.emit('systemMessage', { text: `✅ Connected to Twitch: ${activeTwitch}`, color: '#9146FF', id: 'twitch' });
-    if (systemStatus.youtube) socket.emit('systemMessage', { text: `✅ Connected to YouTube!`, color: '#FF0000', id: 'youtube' });
+    if (isDevMode) {
+        socket.emit('systemMessage', { text: '🧪 Dev Mode: Simulated chat active', color: '#00FF7F', id: 'dev' });
+    } else {
+        if (systemStatus.twitch) socket.emit('systemMessage', { text: `✅ Connected to Twitch: ${activeTwitch}`, color: '#9146FF', id: 'twitch' });
+        if (systemStatus.youtube) socket.emit('systemMessage', { text: `✅ Connected to YouTube!`, color: '#FF0000', id: 'youtube' });
+    }
 
     socket.on('updateConfig', (newSettings) => {
         currentConfig = { ...currentConfig, ...newSettings };
-        fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
+        writeConfig(currentConfig);
         io.emit('loadConfig', { ...currentConfig, needsSetup: false });
     });
 
     // Handle Stream Switching / First Time Setup
     socket.on('updateStreams', (data) => {
-        saveEnv(data.twitch, data.youtube);
+        saveStreamConfig(data.twitch, data.youtube);
         if (data.twitch !== activeTwitch) connectTwitch(data.twitch);
         if (data.youtube !== activeYouTube) connectYouTube(data.youtube);
 
@@ -279,7 +380,9 @@ server.listen(PORT, () => {
     console.log(`Chat widget running on http://localhost:${PORT}`);
 
     // Check if the user needs to do the first-time setup
-    if (!fs.existsSync('.env') && !activeTwitch && !activeYouTube) {
+    if (isDevMode) {
+        console.log(`\nOpen http://localhost:${PORT} in your browser to see the simulated chat.`);
+    } else if (!activeTwitch && !activeYouTube) {
         console.log(`\n=============================================================`);
         console.log(`FIRST-TIME SETUP REQUIRED`);
         console.log(`=============================================================`);
@@ -287,11 +390,15 @@ server.listen(PORT, () => {
         console.log(`\nYou have two easy ways to get started:`);
         console.log(`  1. Web Setup: Open http://localhost:${PORT} in your`);
         console.log(`     web browser and use the welcome popup to connect.`);
-        console.log(`  2. Manual Setup: Copy 'example.env', rename it to '.env',`);
-        console.log(`     fill out your channel details, and restart this server.`);
+        console.log(`  2. Manual Setup: Edit 'config.json' and add your`);
+        console.log(`     "twitchChannel" / "youtubeChannel" fields, then restart.`);
         console.log(`=============================================================\n`);
+        if (!isElectron) openBrowser(`http://localhost:${PORT}`).catch(() => {});
     } else {
         console.log(`\nWaking up the chat goblins and brewing coffee for the Twitch bots...`);
         console.log(`Give it just a moment to fully connect to your streams!`);
     }
 });
+
+// Lets electron/main.js host a window over this server once it's listening.
+module.exports = { server, PORT };

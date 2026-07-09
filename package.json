@@ -2,19 +2,65 @@
   "name": "multi-chat",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "electron/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node server.js --dev",
+    "start": "electron .",
+    "build:win": "pkg . --targets node26-win-x64 --output dist/multi-chat-windows.exe",
+    "build:mac": "pkg . --targets node26-macos-x64,node26-macos-arm64 --output dist/multi-chat-macos",
+    "build:linux": "pkg . --targets node26-linux-x64 --output dist/multi-chat-linux",
+    "build": "npm run build:win && npm run build:mac && npm run build:linux",
+    "dist:linux": "electron-builder --linux AppImage --x64 --arm64",
+    "dist:win": "electron-builder --win portable --x64 --arm64",
+    "dist:mac": "electron-builder --mac zip --x64 --arm64",
+    "dist": "npm run dist:linux && npm run dist:win && npm run dist:mac"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "bin": "server.js",
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ],
+    "outputPath": "dist"
+  },
+  "build": {
+    "appId": "com.jugachi.multichat",
+    "productName": "Multi-Chat",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "server.js",
+      "electron/**/*",
+      "public/**/*",
+      "package.json",
+      "!dist/**"
+    ],
+    "linux": {
+      "target": ["AppImage"],
+      "category": "Utility"
+    },
+    "win": {
+      "target": ["portable"]
+    },
+    "mac": {
+      "target": ["zip"]
+    }
+  },
   "dependencies": {
-    "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "open": "^11.0.0",
     "socket.io": "^4.8.3",
     "tmi.js": "^1.8.5",
     "youtube-chat": "^2.2.0"
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.21.0",
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3"
   }
 }

@@ -1,7 +1,11 @@
 {
-  "theme": "glassmorphic",
+  "theme": "cyberpunk",
   "background": "dark",
   "mode": "streamer",
-  "streamerName": "jugachi",
-  "activityPos": "right"
+  "mentions": true,
+  "streamerName": "Jugachi",
+  "activityPos": "left",
+  "port": 3000,
+  "twitchChannel": "Jugachi",
+  "youtubeChannel": "UCVQFwBj0jJ4w4mdYwd1nibw"
 }

@@ -1,0 +1,62 @@
+name: Release
+
+# Runs when you push a version tag (e.g. `git tag v1.1.0 && git push origin v1.1.0`).
+# Bump the "version" field in package.json first so the built apps report the right version,
+# then tag and push — that's the "I want to update it" trigger. Can also be run manually.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            script: dist:linux
+          - os: windows-latest
+            script: dist:win
+          - os: macos-latest
+            script: dist:mac
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+
+      - run: npm ci
+
+      - run: npm run ${{ matrix.script }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build-${{ matrix.os }}
+          path: |
+            release/*.AppImage
+            release/*.exe
+            release/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist-artifacts
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: dist-artifacts/**
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
