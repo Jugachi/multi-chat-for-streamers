@@ -21,7 +21,6 @@
 
         body.mode-chat {
             overflow-y: auto !important;
-            scroll-behavior: smooth;
         }
 
         /* Custom Scrollbar styling for Chat Mode */
@@ -49,12 +48,20 @@
             width: 100vw;
         }
 
+        /* Entry animations (skew/translate) briefly overflow sideways; without this a
+           default light horizontal scrollbar flashes in and shoves content up. */
         #chatbox {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding-top: 10px;
             padding-bottom: 20px;
-            scroll-behavior: smooth;
+        }
+
+        #chatbox,
+        #activity-feed {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
         }
 
         #activity-feed {

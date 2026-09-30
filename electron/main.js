@@ -19,6 +19,7 @@ if (!app.requestSingleInstanceLock()) {
             height: 750,
             title: 'Multi-Chat',
             autoHideMenuBar: true,
+            backgroundColor: '#0e0e10',
         });
         mainWindow.loadURL(`http://localhost:${port}`);
     }
