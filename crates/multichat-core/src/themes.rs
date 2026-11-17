@@ -243,6 +243,9 @@ mod tests {
         let hub = Hub::new();
         let mut rx = hub.subscribe();
         let _watcher = themes.watch(hub.clone()).expect("watcher");
+        // FSEvents (macOS) delivers late and can replay the save() above; drop that.
+        tokio::time::sleep(Duration::from_millis(1500)).await;
+        while rx.try_recv().is_ok() {}
 
         let quiet = Duration::from_millis(800);
         for _ in 0..3 {
