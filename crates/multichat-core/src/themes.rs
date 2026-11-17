@@ -9,7 +9,8 @@
 
 use crate::assets;
 use crate::hub::Hub;
-use notify::{RecursiveMode, Watcher};
+use notify::event::ModifyKind;
+use notify::{EventKind, RecursiveMode, Watcher};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -136,7 +137,7 @@ impl Themes {
     pub fn watch(self: &Arc<Self>, hub: Arc<Hub>) -> Option<notify::RecommendedWatcher> {
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<()>();
         let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
-            if res.is_ok() {
+            if res.is_ok_and(|e| is_content_change(&e.kind)) {
                 let _ = tx.send(());
             }
         })
@@ -167,6 +168,17 @@ impl Themes {
             }
         });
         Some(watcher)
+    }
+}
+
+/// inotify also reports opens/reads (and atime updates); our own list() and
+/// CSS serving cause those, so counting them would loop forever.
+fn is_content_change(kind: &EventKind) -> bool {
+    match kind {
+        EventKind::Create(_) | EventKind::Remove(_) => true,
+        EventKind::Modify(ModifyKind::Metadata(_)) => false,
+        EventKind::Modify(_) => true,
+        _ => false,
     }
 }
 
@@ -218,6 +230,30 @@ mod tests {
         assert!(themes.custom_file("my-theme.css").is_some());
         themes.delete("custom-my-theme").unwrap();
         assert!(themes.delete("dark-pill").is_err());
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    /// Reading theme files (list(), serving the CSS) must not count as a change,
+    /// or every client reload triggers the next themesChanged in an endless loop.
+    #[tokio::test]
+    async fn watcher_ignores_reads_but_reports_writes() {
+        let dir = std::env::temp_dir().join(format!("mc-watch-{}", fastrand::u64(..)));
+        let themes = Arc::new(Themes::new(dir.clone()));
+        themes.save("Watched", ".message{}").unwrap();
+        let hub = Hub::new();
+        let mut rx = hub.subscribe();
+        let _watcher = themes.watch(hub.clone()).expect("watcher");
+
+        let quiet = Duration::from_millis(800);
+        for _ in 0..3 {
+            themes.list();
+            std::fs::read_to_string(dir.join("watched.css")).unwrap();
+        }
+        assert!(tokio::time::timeout(quiet, rx.recv()).await.is_err(), "reads emitted themesChanged");
+
+        std::fs::write(dir.join("watched.css"), ".message{color:red}").unwrap();
+        let msg = tokio::time::timeout(quiet, rx.recv()).await.expect("no event for a write").unwrap();
+        assert!(msg.contains("themesChanged"));
         let _ = std::fs::remove_dir_all(dir);
     }
 }
