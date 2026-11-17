@@ -1,103 +1,90 @@
 # Multi-Chat Stream Widget
 
-A lightweight, self-hosted chat widget for OBS Studio that combines Twitch and YouTube chat. It bypasses YouTube API limits by scraping the live chat directly, supports 7TV/BTTV/FFZ emotes natively, and features a real-time WebSocket settings menu.
+A lightweight, self-hosted chat widget for OBS Studio that combines **Twitch, YouTube, Kick and TikTok** chat in one feed. Written in Rust with a [Tauri](https://tauri.app/) desktop window — no Node.js, no Electron, a ~10 MB app. YouTube chat is read without API limits, 7TV/BTTV/FFZ emotes work out of the box, and everything you see is plain HTML/CSS you can restyle.
 
 ## Features
-* **Operating System:** Supports Windows, macOS, and Linux
-* **Unified Chat:** Combines Twitch and YouTube into a single chronological feed.
-* **Native Emote Support:** Fetches and displays 7TV, BTTV, and FFZ emotes automatically.
-* **Auto-Reconnect:** Checks YouTube every 60 seconds if you aren't currently live.
-* **Two Modes:** 
-  * *Widget Mode:* Caps at 50 messages, hides scrollbars, transparent background (For OBS).
-  * *Chat Mode:* Keeps 1000 messages in memory, enables scrolling and "new message" alerts.
-  * *Streamer Mode:* Splits the screen to show Chat and a dedicated Twitch Activity feed (Subs, Gifts, Cheers, Raids) side-by-side.
-* **Mention Highlighting:** Visually highlights messages that mention your Twitch username.
-* **Live Settings UI:** Press `T` in the browser to change themes and modes on the fly.
-* **Theme Editor:** Open `http://localhost:<port>/editor.html` (or *Settings → Display → Open Theme Editor*) to design your own chat theme with a live preview. Saved themes land in a `custom-themes/` folder next to `config.json` and appear under *My Themes* immediately. You can also drop hand-written `.css` files into that folder; open chats hot-reload whenever a theme file changes.
+* **Operating System:** Windows, macOS, and Linux
+* **Unified Chat:** Twitch, YouTube, Kick and TikTok in a single chronological feed.
+* **Native Emote Support:** Twitch, Kick and YouTube emotes, plus 7TV, BTTV, and FFZ.
+* **Auto-Reconnect:** Every platform reconnects on its own (YouTube/TikTok check every 60 seconds whether you're live).
+* **Three Modes:**
+  * *Widget Mode:* Caps at 50 messages, hides scrollbars, transparent background (for OBS).
+  * *Chat Mode:* Keeps 1000 messages, enables scrolling and "new message" alerts.
+  * *Streamer Mode:* Chat plus an activity feed (subs, gifts, bits, raids, Super Chats, TikTok gifts & follows) and a "Live on:" status for every connected platform.
+* **Mention Highlighting:** Highlights messages that mention your Twitch username.
+* **Live Settings UI:** Press `T` (or the gear in Streamer Mode) to change channels, themes and modes on the fly.
+* **9 Built-in Themes:** Dark Pill, Cyberpunk, Glassmorphic, Retro Arcade, MMO Chat Log, RPG Dialog (typewriter), Neon Tag, Cozy Pastel, Sci-Fi HUD.
+* **Theme Editor:** *Settings → Display → Open Theme Editor* (or `/editor.html`) — design your own theme with a live preview, no coding needed. See [Custom themes](#custom-themes).
+* **Virtual Mode:** Simulated chat on all four platforms for testing, without any network connection to them.
 
-## Quick Start (No Node.js required)
-All releases are published on the [Releases](../../releases) tab of this GitHub repo — grab a ready-to-run desktop app from there, no Node.js install needed, no terminal, just a normal app window:
-* **Windows:** `Multi-Chat 1.0.0.exe` — a portable app, just double-click it (no installer).
-* **macOS:** `Multi-Chat-1.0.0-mac.zip` (Intel) or `Multi-Chat-1.0.0-arm64-mac.zip` (Apple Silicon) — unzip and open `Multi-Chat.app`. Since the build isn't code-signed, right-click it and choose "Open" the first time (or run `xattr -d com.apple.quarantine "Multi-Chat.app"`) to get past Gatekeeper.
-* **Linux:** `Multi-Chat-1.0.0.AppImage` (or `-arm64.AppImage`) — `chmod +x` it, then double-click or run it.
+## Quick Start
+Grab the app from the [Releases](../../releases) tab:
+* **Windows:** `Multi-Chat_<version>_x64-setup.exe` (installer) or `Multi-Chat-portable-windows-x64.exe` (just double-click, nothing installed). Uses the WebView2 runtime that ships with Windows 10/11.
+* **macOS:** `Multi-Chat_<version>_aarch64.dmg`. The build isn't code-signed: right-click the app and choose "Open" the first time (or run `xattr -d com.apple.quarantine "/Applications/Multi-Chat.app"`).
+* **Linux:** `.AppImage` (`chmod +x`, then run) or `.deb`.
 
-A window opens showing the widget itself. If you haven't set a Twitch or YouTube channel yet, it'll show the first-time setup popup automatically so you can connect one — just fill it in right there in the window. Settings are stored per-user (`%APPDATA%\multi-chat` on Windows, `~/Library/Application Support/multi-chat` on macOS, `~/.config/multi-chat` on Linux), so they persist across app updates.
+A window opens with the chat. On first start a setup popup asks for your channels — fill in any of Twitch, YouTube, Kick or TikTok. The app serves everything on **port `41414`** (`http://localhost:41414`).
 
-**Port:** the released app serves the widget on **port `41414`** (`http://localhost:41414`). If you instead run the project from source with Node.js (see below), it defaults to **port `3000`**. Keep this in mind when pointing OBS at the widget — see [Usage](#usage).
+**Settings & data folder** (`config.json`, `custom-themes/`, `web/`):
+* Windows: `%APPDATA%\multi-chat` · macOS: `~/Library/Application Support/multi-chat` · Linux: `~/.config/multi-chat`
+* **Portable mode:** put a `config.json` next to the executable (e.g. on a USB stick) and the app keeps all its data there instead.
+* Settings from the old Electron version are picked up automatically (same folder).
 
-Skip ahead to [Usage](#usage) to point OBS at the widget. If you'd rather run it with Node.js directly, or want to build the app yourself, keep reading.
-
-## Prerequisites
-Ensure Node.js and npm are installed on your system before proceeding.
-
-**Windows:**
-* Download and install the "LTS" (Long Term Support) version from the [official Node.js website](https://nodejs.org/).
-
-**macOS:**
-* Download the installer from the [official Node.js website](https://nodejs.org/).
-
-**Debian / Ubuntu / Pop!_OS:**
-```bash
-sudo apt update
-sudo apt install nodejs npm
+**Command line options** (desktop app and headless server):
 ```
-
-**Fedora:**
-```bash
-sudo dnf install nodejs npm
+--virtual            simulated chat, no platform connections (alias: --dev)
+--port=48213         use another port (or "port": 48213 in config.json, or the PORT env var)
+--data-dir=<path>    keep config and themes in a specific folder
 ```
-
-**Arch:**
-```bash
-sudo pacman -S nodejs npm
-```
-
-## Setup & Installation
-1. Clone or download this repository.
-2. Install the required dependencies:
-   ```bash
-   npm install express socket.io tmi.js youtube-chat
-   ```
-3. Either use the web-based first-time setup popup when you first launch the widget, or manually edit `config.json` and add your `twitchChannel` and `youtubeChannel` fields.
-   *(Note: Find your YouTube Channel ID by going to your channel page. It usually starts with `UC...`)*
 
 ## Usage
-1. Start the server:
-   ```bash
-   node server.js
-   ```
-2. **For OBS Studio:** Add a new "Browser Source", uncheck "Local File", and set the URL to `http://localhost:PORT`.
-   * **Port:** use `41414` if you're running the released desktop app from the [Releases](../../releases) tab, or `3000` if you're running it from source with `node server.js` (as in step 1 above).
-   * **Pro Tip (URL Overrides):** You can force specific settings for your OBS source by adding query parameters to the URL. This allows you to lock OBS into a transparent widget layout, while you safely change themes or use the full "Chat Mode" in your personal browser!
-   * **Example URL:** `http://localhost:3000/?mode=widget&bg=transparent&theme=glassmorphic` (swap in `41414` if you're using the released app)
-   * **Available Parameters:**
-     * `mode=` (`widget` or `chat`)
+1. **For OBS Studio:** Add a "Browser Source", uncheck "Local File", and set the URL to `http://localhost:41414`.
+   * **URL overrides:** lock OBS into a specific look while you change settings freely in the app:
+     `http://localhost:41414/?mode=widget&bg=transparent&theme=glassmorphic`
+     * `mode=` (`widget`, `chat` or `streamer`)
      * `bg=` (`transparent` or `dark`)
-     * `theme=` (`dark-pill`, `cyberpunk`, `glassmorphic`, `retro-arcade`, `mmo-log`, `rpg-dialog`, `neon-tag`, `cozy-pastel`, or `scifi-hud`)
-     * `pos=` (`left` or `right` - controls Activity Feed position in Streamer Mode)
-3. **For Moderation/Reading:** Open a regular web browser and navigate to the same local URL. Press T to open the settings menu and switch to "Chat Mode" and "Dark Background".
+     * `theme=` (`dark-pill`, `cyberpunk`, `glassmorphic`, `retro-arcade`, `mmo-log`, `rpg-dialog`, `neon-tag`, `cozy-pastel`, `scifi-hud`, or `custom-<name>` for your own)
+     * `pos=` (`left` or `right` — activity feed position in Streamer Mode)
+   * OBS on a second PC? Use `http://<this-pc's-ip>:41414`.
+2. **For moderation/reading:** use the app window (or any browser on the same URL). Press `T` for settings.
 
-*(Note: Changes made in the web browser will automatically and instantly update the widget running inside OBS Studio without needing a refresh!)*
+*(Changes in the app or browser instantly update the widget in OBS — no refresh needed.)*
 
-## Building the desktop app yourself
-Packaging is handled by [Electron](https://www.electronjs.org/) + [electron-builder](https://www.electron.build/), which wraps the same server + widget in a native window and bundles Node/Chromium so end users don't need anything installed.
+### Platform notes
+* **Twitch:** read-only anonymous connection, no login needed.
+* **YouTube:** enter your channel ID (`UC…`, find it on your channel page) or a live video URL.
+* **Kick:** your username or `kick.com/<name>`. Kick sometimes blocks automated channel lookups; the app retries every 30 seconds.
+* **TikTok:** your `@username`; only connects while you're live. Uses the third-party [Euler Stream](https://www.eulerstream.com/) sign server (the same one `tiktok-live-connector` uses), which receives the room id. If you hit its free rate limit, add `"tiktokSignApiKey": "<your key>"` to `config.json`.
+
+## Custom themes
+Everything in the chat is plain HTML/CSS:
+* **Theme editor:** pick a preset, adjust layout/colors/borders/animations with a live preview, and *Save to My Themes*. Saved themes appear under *My Themes* in the theme dropdown immediately.
+* **Hand-written CSS:** drop any `.css` file into `custom-themes/` in the data folder. Start it with `/* @name: My Theme */` to give it a display name. Open chats **hot-reload** whenever a theme file is added, edited or removed. Useful hooks: `.message`, `.platform-icon`, `.author-name`, `.text`, `.message[data-platform="Twitch"]`, `var(--user-color)`, `var(--platform-color)`, and `body { --typewriter: 1; }` for the letter-by-letter effect. The built-in themes in [`public/themes/`](public/themes) are good examples.
+* **Override any page:** files in the data folder's `web/` subfolder replace the built-in ones with the same path (e.g. `web/index.html`, `web/css/app.css`), so you can change the whole layout without rebuilding the app.
+
+## Building from source
+Requirements: [Rust](https://rustup.rs/) (stable) and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS (on Windows: WebView2 + MSVC build tools; on Linux: `libwebkit2gtk-4.1-dev` and friends). Node.js is **not** needed.
+
 ```bash
-npm install
-npm run dist:linux   # -> release/*.AppImage (x64 + arm64)
-npm run dist:win     # -> release/*.exe (portable, x64 + arm64 in one file)
-npm run dist:mac     # -> release/*-mac.zip (x64 + arm64)
-npm run dist         # builds all three
+cargo install tauri-cli --version "^2" --locked   # once
+
+cargo tauri dev -- -- --virtual    # run the desktop app in virtual mode
+cargo tauri build                  # installers/bundles in target/release/bundle/, plain exe in target/release/
+cargo test -p multichat-core       # unit + end-to-end tests
 ```
-`electron/main.js` is the app entry point — it starts `server.js` internally and opens a `BrowserWindow` pointing at it once the server is listening. `public/` and `server.js` are bundled into the app's `asar` archive; `config.json` is intentionally **not** bundled — it lives in the OS's per-user app-data folder instead (see [Quick Start](#quick-start-no-nodejs-required)), so settings survive reinstalls/updates.
 
-Building for macOS produces a `.zip` rather than a signed `.dmg`, since `.dmg` creation needs macOS-only tooling (`sips`/`hdiutil`) — build that target on an actual Mac if you need a `.dmg`. None of these builds are code-signed, so macOS/Windows may show an "unknown publisher" warning on first launch; that's expected for a self-built app without a paid signing certificate.
-
-### Alternative: headless console build
-There's also a lighter-weight, no-GUI option using [`@yao-pkg/pkg`](https://github.com/yao-pkg/pkg), useful for running on a headless machine (e.g. a VPS) where you'd just open the widget URL in a browser instead of a native window:
+### Headless server (no window)
+For a VPS or any machine where you'd rather use a browser:
 ```bash
-npm run build         # builds Windows, macOS (x64 + arm64), and Linux console binaries into dist/
-npm run build:win      # or just one platform at a time
-npm run build:mac
-npm run build:linux
+cargo run --release -p multichat-core --bin multichat-server -- --virtual
 ```
-These binaries start the same server from a terminal/console window and auto-open your default browser to the settings page on first run, instead of showing their own window.
+Release builds also ship `multichat-server-<os>` binaries.
+
+### Project layout
+```
+public/                     the web UI: chat page, theme editor, themes (compiled into the binary)
+crates/multichat-core/      server, platform connections, themes, config (Rust library + headless binary)
+  src/services/             one module per platform: twitch.rs, youtube.rs, kick.rs, tiktok.rs
+src-tauri/                  the desktop window (starts the core server, shows the chat page)
+```
+None of the builds are code-signed, so Windows/macOS may show an "unknown publisher" warning on first launch — expected for an app without a paid signing certificate.

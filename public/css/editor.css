@@ -23,6 +23,8 @@ body {
 
 .topbar h1 { margin: 0; font-size: 18px; color: #a970ff; }
 .topbar .subtitle { color: #adadb8; font-size: 13px; }
+.topbar .back-link { margin-left: auto; color: #a970ff; text-decoration: none; font-size: 13px; }
+.topbar .back-link:hover { text-decoration: underline; }
 
 .layout {
     flex: 1;

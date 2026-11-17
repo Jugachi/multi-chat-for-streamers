@@ -1,8 +1,9 @@
 // Client entry point (ES module). Message rendering lives in messages.js, icons in icons.js.
 import { icons, brandColors, uiIcons } from './icons.js';
 import { createMessageElement, applyMessageColors, themeWantsTypewriter, typewrite } from './messages.js';
+import { createSocket } from './socket.js';
 
-const socket = io();
+const socket = createSocket();
 const chatbox = document.getElementById('chatbox');
 const settingsMenu = document.getElementById('settings-menu');
 const modeSelect = document.getElementById('mode-select');
@@ -16,6 +17,13 @@ const overrideMode = urlParams.get('mode');
 const overrideBg = urlParams.get('bg');
 const overrideTheme = urlParams.get('theme');
 const posSelect = document.getElementById('pos-select');
+
+// Desktop app window (loaded with ?app=1): open the theme editor in the same
+// window instead of a new one; the editor has a "Back to chat" link.
+if (urlParams.has('app')) sessionStorage.setItem('desktopApp', '1');
+if (sessionStorage.getItem('desktopApp')) {
+    document.querySelectorAll('.editor-link').forEach(a => a.removeAttribute('target'));
+}
 
 // Setup Elements
 const setupModal = document.getElementById('setup-modal');
