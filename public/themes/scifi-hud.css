@@ -1,0 +1,78 @@
+/* @name: Sci-Fi HUD */
+/* Sci-Fi HUD — angled game-HUD panels with a glowing cyan edge, the name in a
+   header strip, and a light sweep when a message arrives. */
+body {
+    font-family: 'Bahnschrift', 'Segoe UI', 'Arial Narrow', sans-serif;
+    background: transparent; color: #dff6ff;
+    margin: 0; padding: 10px; font-size: 16px; overflow: hidden;
+    letter-spacing: 0.3px;
+}
+
+.message {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    margin: 0 4px 10px;
+    background: linear-gradient(135deg, rgba(10, 22, 56, 0.94), rgba(30, 12, 66, 0.9));
+    border-left: 3px solid #39e5ff;
+    /* cut top-left and bottom-right corners */
+    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+    overflow: hidden;
+    animation: hudIn 0.35s ease-out;
+}
+
+/* Header strip: platform logo + name */
+.platform-icon, .author {
+    grid-row: 1;
+    background: rgba(57, 229, 255, 0.12);
+    border-bottom: 1px solid rgba(57, 229, 255, 0.45);
+}
+.platform-icon {
+    grid-column: 1;
+    display: flex; align-items: center;
+    padding: 5px 0 5px 14px;
+}
+.platform-icon svg { width: 15px; height: 15px; filter: drop-shadow(0 0 3px currentColor); }
+.author {
+    grid-column: 2;
+    padding: 5px 14px 5px 8px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-shadow: 0 0 6px currentColor;
+}
+.author-sep { display: none; }
+
+.text {
+    grid-row: 2; grid-column: 1 / -1;
+    padding: 8px 16px 10px;
+    color: #e6f9ff;
+    word-break: break-word;
+}
+
+/* Light sweep across the panel on arrival */
+.message::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(100deg, transparent 30%, rgba(57, 229, 255, 0.28) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: hudSweep 0.9s ease-out 0.1s forwards;
+    pointer-events: none;
+}
+
+/* Mentions: amber alert panel */
+.message.mention-highlight {
+    background: linear-gradient(135deg, rgba(70, 52, 8, 0.94), rgba(30, 12, 66, 0.9)) !important;
+    border-left: 3px solid #ffc83a !important;
+    box-shadow: none !important;
+}
+
+@keyframes hudIn {
+    from { opacity: 0; transform: translateX(-24px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes hudSweep {
+    to { transform: translateX(100%); }
+}

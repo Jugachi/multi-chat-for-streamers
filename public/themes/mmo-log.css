@@ -1,0 +1,58 @@
+/* @name: MMO Chat Log */
+/* MMO Chat Log — classic MMO-style chat lines: no boxes, outlined text,
+   "[Twitch] [Name]: message", each platform gets its own channel color. */
+body {
+    font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+    background: transparent; color: #ffffff;
+    margin: 0; padding: 10px; font-size: 17px; overflow: hidden;
+}
+
+.message {
+    --chan: #ffffff;
+    display: block;
+    margin: 0 0 3px;
+    padding: 1px 4px;
+    line-height: 1.4;
+    color: var(--chan);
+    /* Hard 1px outline so it stays readable over any game footage */
+    text-shadow:
+        1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
+        0 0 4px rgba(0, 0, 0, 0.9);
+    word-break: break-word;
+    animation: mmoIn 0.2s ease-out;
+}
+
+/* Channel colors per platform */
+.message[data-platform="Twitch"]  { --chan: #c9a8ff; }
+.message[data-platform="YouTube"] { --chan: #ff9a8a; }
+.message[data-platform="Kick"]    { --chan: #9dff7a; }
+.message[data-platform="TikTok"]  { --chan: #7fe9ff; }
+
+/* Platform shown as a text channel tag instead of a logo */
+.platform-icon { display: inline; color: var(--chan) !important; }
+.platform-icon svg { display: none; }
+.message[data-platform="Twitch"]  .platform-icon::before { content: '[Twitch] '; }
+.message[data-platform="YouTube"] .platform-icon::before { content: '[YouTube] '; }
+.message[data-platform="Kick"]    .platform-icon::before { content: '[Kick] '; }
+.message[data-platform="TikTok"]  .platform-icon::before { content: '[TikTok] '; }
+
+.author { font-weight: bold; }
+.author-name::before { content: '['; }
+.author-name::after { content: ']'; }
+.author-sep { margin-right: 4px; color: var(--chan); }
+.text { color: var(--chan); }
+
+.emote { height: 24px; }
+
+/* Mentions: like a whisper — pink line on a faint band */
+.message.mention-highlight {
+    --chan: #ff8ae2;
+    background: linear-gradient(90deg, rgba(255, 138, 226, 0.18), transparent) !important;
+    border-left: 2px solid #ff8ae2 !important;
+    box-shadow: none !important;
+}
+
+@keyframes mmoIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

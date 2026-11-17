@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Multi-Chat Theme Editor</title>
+    <link rel="stylesheet" href="/css/editor.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <h1>Theme Editor</h1>
+        <span class="subtitle">Design a chat theme, save it, and it shows up in the chat's theme list right away.</span>
+    </header>
+
+    <main class="layout">
+        <aside class="panel">
+            <section class="group">
+                <h2>Theme</h2>
+                <label class="field">
+                    <span>Name</span>
+                    <input type="text" id="theme-name" maxlength="60" value="My Theme">
+                </label>
+                <label class="field">
+                    <span>Open existing theme</span>
+                    <select id="load-select">
+                        <option value="">— start fresh —</option>
+                    </select>
+                </label>
+                <div class="field">
+                    <span>Start from a preset</span>
+                    <div class="presets" id="presets">
+                        <button data-preset="clean">Clean Pill</button>
+                        <button data-preset="mmo">MMO Log</button>
+                        <button data-preset="neon">Neon Glow</button>
+                        <button data-preset="cute">Cute Bubble</button>
+                        <button data-preset="hud">Game HUD</button>
+                        <button data-preset="rpg">RPG Box</button>
+                    </div>
+                </div>
+            </section>
+
+            <fieldset id="controls">
+                <details class="group" open>
+                    <summary>Layout &amp; Text</summary>
+                    <label class="field"><span>Layout</span>
+                        <select data-key="layout">
+                            <option value="bubble">Bubble (all in one row)</option>
+                            <option value="line">Chat line (MMO style)</option>
+                            <option value="tag">Name tag on the border</option>
+                            <option value="pills">Name pills above a bubble</option>
+                            <option value="header">Header strip with name</option>
+                        </select>
+                    </label>
+                    <label class="field"><span>Font</span><select data-key="font" id="font-select"></select></label>
+                    <label class="field"><span>Font size <output></output></span><input type="range" data-key="fontSize" min="11" max="32"></label>
+                    <label class="field inline"><span>Text color</span><input type="color" data-key="textColor"></label>
+                    <label class="field check"><input type="checkbox" data-key="textOutline"> Black text outline (readable over gameplay)</label>
+                </details>
+
+                <details class="group" open>
+                    <summary>Box</summary>
+                    <label class="field inline"><span>Background</span><input type="color" data-key="bgColor"></label>
+                    <label class="field"><span>Background opacity <output></output></span><input type="range" data-key="bgOpacity" min="0" max="100"></label>
+                    <label class="field check"><input type="checkbox" data-key="gradient"> Gradient</label>
+                    <label class="field inline" data-show-if="gradient"><span>Gradient end</span><input type="color" data-key="bgColor2"></label>
+                    <label class="field"><span>Corner radius <output></output></span><input type="range" data-key="radius" min="0" max="30"></label>
+                    <label class="field"><span>Inner padding <output></output></span><input type="range" data-key="padding" min="0" max="24"></label>
+                    <label class="field"><span>Space between messages <output></output></span><input type="range" data-key="spacing" min="0" max="30"></label>
+                </details>
+
+                <details class="group">
+                    <summary>Border &amp; Glow</summary>
+                    <label class="field"><span>Border width <output></output></span><input type="range" data-key="borderWidth" min="0" max="6"></label>
+                    <label class="field"><span>Border color</span>
+                        <select data-key="borderMode">
+                            <option value="fixed">One color</option>
+                            <option value="user">Chatter's name color</option>
+                            <option value="platform">Platform color</option>
+                        </select>
+                    </label>
+                    <label class="field inline" data-show-if="borderMode=fixed"><span>Color</span><input type="color" data-key="borderColor"></label>
+                    <label class="field"><span>Glow <output></output></span><input type="range" data-key="glow" min="0" max="24"></label>
+                    <label class="field"><span>Glow color</span>
+                        <select data-key="glowMode">
+                            <option value="user">Chatter's name color</option>
+                            <option value="platform">Platform color</option>
+                            <option value="fixed">One color</option>
+                        </select>
+                    </label>
+                    <label class="field inline" data-show-if="glowMode=fixed"><span>Color</span><input type="color" data-key="glowColor"></label>
+                </details>
+
+                <details class="group">
+                    <summary>Name &amp; Platform</summary>
+                    <label class="field"><span>Name color</span>
+                        <select data-key="nameColorMode">
+                            <option value="user">Chatter's own color</option>
+                            <option value="platform">Platform color</option>
+                            <option value="fixed">One color</option>
+                        </select>
+                    </label>
+                    <label class="field inline" data-show-if="nameColorMode=fixed"><span>Color</span><input type="color" data-key="nameColor"></label>
+                    <label class="field"><span>Name weight</span>
+                        <select data-key="nameWeight">
+                            <option value="400">Normal</option>
+                            <option value="600">Semi-bold</option>
+                            <option value="700">Bold</option>
+                            <option value="900">Black</option>
+                        </select>
+                    </label>
+                    <label class="field check"><input type="checkbox" data-key="nameUppercase"> UPPERCASE names</label>
+                    <label class="field check"><input type="checkbox" data-key="nameBrackets"> [Brackets] around names</label>
+                    <label class="field check"><input type="checkbox" data-key="showColon"> Colon after name</label>
+                    <label class="field"><span>Platform</span>
+                        <select data-key="iconMode">
+                            <option value="logo">Logo</option>
+                            <option value="text">Text label</option>
+                            <option value="hidden">Hidden</option>
+                        </select>
+                    </label>
+                    <label class="field" data-show-if="iconMode=logo"><span>Logo size <output></output></span><input type="range" data-key="iconSize" min="10" max="30"></label>
+                </details>
+
+                <details class="group">
+                    <summary>Animation &amp; Mentions</summary>
+                    <label class="field"><span>Entrance</span>
+                        <select data-key="animation">
+                            <option value="none">None</option>
+                            <option value="fade">Fade</option>
+                            <option value="slide">Slide in</option>
+                            <option value="pop">Pop</option>
+                            <option value="bounce">Bounce</option>
+                            <option value="flicker">Neon flicker</option>
+                        </select>
+                    </label>
+                    <label class="field check"><input type="checkbox" data-key="typewriter"> Typewriter (text types in letter by letter)</label>
+                    <label class="field inline"><span>Mention highlight</span><input type="color" data-key="mentionColor"></label>
+                </details>
+            </fieldset>
+
+            <details class="group" id="advanced">
+                <summary>Advanced: CSS</summary>
+                <label class="field check"><input type="checkbox" id="manual-toggle"> Edit the CSS by hand</label>
+                <textarea id="css-output" spellcheck="false" readonly></textarea>
+                <p class="note">Hand-written themes can use <code>.message</code>, <code>.platform-icon</code>,
+                    <code>.author-name</code>, <code>.text</code>, <code>[data-platform="Twitch"]</code>,
+                    <code>var(--user-color)</code>, <code>var(--platform-color)</code> and
+                    <code>body { --typewriter: 1; }</code>.</p>
+            </details>
+
+            <div class="actions">
+                <button class="primary" id="save-btn">Save to My Themes</button>
+                <button id="download-btn">Download .css</button>
+                <button class="danger" id="delete-btn" hidden>Delete</button>
+                <p class="status" id="status" role="status"></p>
+            </div>
+        </aside>
+
+        <section class="preview-area">
+            <div class="preview-toolbar">
+                <span>Preview background:</span>
+                <button data-bg="dark" class="active">Dark</button>
+                <button data-bg="game">Game scene</button>
+                <button data-bg="light">Light</button>
+                <button data-bg="checker">Transparent</button>
+                <button id="replay-btn" class="replay">&#8635; Replay</button>
+            </div>
+            <iframe id="preview" title="Theme preview"></iframe>
+        </section>
+    </main>
+
+    <script type="module" src="/js/editor.js"></script>
+</body>
+
+</html>

@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node server.js --dev",
+    "virtual": "node server.js --virtual --port=48213",
     "start": "electron .",
     "build:win": "pkg . --targets node26-win-x64 --output dist/multi-chat-windows.exe",
     "build:mac": "pkg . --targets node26-macos-x64,node26-macos-arm64 --output dist/multi-chat-macos",
@@ -35,26 +36,34 @@
     },
     "files": [
       "server.js",
+      "src/**/*",
       "electron/**/*",
       "public/**/*",
       "package.json",
       "!dist/**"
     ],
     "linux": {
-      "target": ["AppImage"],
+      "target": [
+        "AppImage"
+      ],
       "category": "Utility"
     },
     "win": {
-      "target": ["portable"]
+      "target": [
+        "portable"
+      ]
     },
     "mac": {
-      "target": ["zip"]
+      "target": [
+        "zip"
+      ]
     }
   },
   "dependencies": {
     "express": "^5.2.1",
     "open": "^11.0.0",
     "socket.io": "^4.8.3",
+    "tiktok-live-connector": "^2.5.0",
     "tmi.js": "^1.8.5",
     "youtube-chat": "^2.2.0"
   },
