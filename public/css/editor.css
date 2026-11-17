@@ -97,6 +97,13 @@ input[type="text"], select, textarea {
     border-radius: 6px;
     padding: 7px 9px;
     font: inherit;
+    color-scheme: dark;
+}
+/* WebKitGTK (Tauri on Linux) draws native selects with the light GTK theme */
+select {
+    appearance: none;
+    background: #0e0e10 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23adadb8'/%3E%3C/svg%3E") no-repeat right 10px center;
+    padding-right: 28px;
 }
 input[type="text"]:focus, select:focus, textarea:focus { outline: 1px solid #9146ff; border-color: #9146ff; }
 

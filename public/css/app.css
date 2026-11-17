@@ -292,11 +292,16 @@ body.activity-left #activity-feed {
     font-family: sans-serif;
 }
 
+/* appearance: none because WebKitGTK (Tauri on Linux) draws native selects with the
+   light GTK theme, ignoring the background but keeping our white text.
+   color-scheme stays on the controls: on :root it would darken the OBS overlay. */
 .setting-row select {
-    background: #0e0e10;
+    appearance: none;
+    color-scheme: dark;
+    background: #0e0e10 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23adadb8'/%3E%3C/svg%3E") no-repeat right 10px center;
     color: white;
     border: 1px solid #3f3f46;
-    padding: 8px;
+    padding: 8px 28px 8px 8px;
     border-radius: 5px;
     cursor: pointer;
 }
