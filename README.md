@@ -13,6 +13,7 @@ A lightweight, self-hosted chat widget for OBS Studio that combines Twitch and Y
   * *Streamer Mode:* Splits the screen to show Chat and a dedicated Twitch Activity feed (Subs, Gifts, Cheers, Raids) side-by-side.
 * **Mention Highlighting:** Visually highlights messages that mention your Twitch username.
 * **Live Settings UI:** Press `T` in the browser to change themes and modes on the fly.
+* **Theme Editor:** Open `http://localhost:<port>/editor.html` (or *Settings → Display → Open Theme Editor*) to design your own chat theme with a live preview. Saved themes land in a `custom-themes/` folder next to `config.json` and appear under *My Themes* immediately. You can also drop hand-written `.css` files into that folder; open chats hot-reload whenever a theme file changes.
 
 ## Quick Start (No Node.js required)
 All releases are published on the [Releases](../../releases) tab of this GitHub repo — grab a ready-to-run desktop app from there, no Node.js install needed, no terminal, just a normal app window:
@@ -72,7 +73,7 @@ sudo pacman -S nodejs npm
    * **Available Parameters:**
      * `mode=` (`widget` or `chat`)
      * `bg=` (`transparent` or `dark`)
-     * `theme=` (`dark-pill`, `cyberpunk`, `glassmorphic`, or `retro-arcade`)
+     * `theme=` (`dark-pill`, `cyberpunk`, `glassmorphic`, `retro-arcade`, `mmo-log`, `rpg-dialog`, `neon-tag`, `cozy-pastel`, or `scifi-hud`)
      * `pos=` (`left` or `right` - controls Activity Feed position in Streamer Mode)
 3. **For Moderation/Reading:** Open a regular web browser and navigate to the same local URL. Press T to open the settings menu and switch to "Chat Mode" and "Dark Background".
 

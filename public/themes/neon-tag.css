@@ -1,0 +1,71 @@
+/* @name: Neon Tag */
+/* Neon Tag — dark glass boxes outlined and glowing in each chatter's own color,
+   with the name in a tag sitting on the top border. */
+body {
+    font-family: 'Segoe UI', 'Trebuchet MS', sans-serif;
+    background: transparent; color: #ffffff;
+    margin: 0; padding: 14px 10px 10px; font-size: 16px; overflow: hidden;
+}
+
+.message {
+    position: relative;
+    margin: 0 8px 22px;
+    padding: 15px 14px 9px;
+    background: linear-gradient(90deg, rgba(10, 10, 18, 0.92), rgba(10, 10, 18, 0.72));
+    border: 2px solid var(--user-color, #9146ff);
+    border-radius: 10px;
+    box-shadow:
+        0 0 8px var(--user-color, #9146ff),
+        inset 0 0 12px rgba(255, 255, 255, 0.04);
+    animation: neonFlicker 0.5s ease-out;
+}
+
+/* Name tag on the top border */
+.author {
+    position: absolute;
+    top: -13px; left: 12px;
+    padding: 1px 10px;
+    background: #0b0b14;
+    border: 2px solid var(--user-color, #9146ff);
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 0 6px var(--user-color, #9146ff);
+    color: var(--user-color, #ffffff);
+}
+.author-sep { display: none; }
+
+/* Platform logo as a small badge on the top-right corner */
+.platform-icon {
+    position: absolute;
+    top: -11px; right: 12px;
+    padding: 3px;
+    background: #0b0b14;
+    border-radius: 50%;
+    line-height: 0;
+}
+.platform-icon svg { width: 14px; height: 14px; }
+
+.text {
+    display: block;
+    color: #f1f1f5;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
+    word-break: break-word;
+}
+
+/* Mentions: switch the neon to gold */
+.message.mention-highlight {
+    --user-color: #ffd700;
+    background: linear-gradient(90deg, rgba(40, 32, 6, 0.92), rgba(10, 10, 18, 0.72)) !important;
+    border-left: 2px solid #ffd700 !important;
+}
+
+/* Quick neon-tube flicker on entry */
+@keyframes neonFlicker {
+    0% { opacity: 0; transform: translateY(6px); }
+    30% { opacity: 1; }
+    40% { opacity: 0.3; }
+    55% { opacity: 1; }
+    65% { opacity: 0.6; }
+    100% { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,85 @@
+/* @name: RPG Dialog (Typewriter) */
+/* RPG Dialog — old-school console RPG text box. Blue gradient window with a
+   white double frame; messages type in letter by letter (see --typewriter). */
+body {
+    --typewriter: 1; /* main.js reads this and types new messages in */
+    font-family: 'Consolas', 'Lucida Console', 'Courier New', monospace;
+    background: transparent; color: #ffffff;
+    margin: 0; padding: 14px 10px 10px; font-size: 17px; overflow: hidden;
+}
+
+.message {
+    position: relative;
+    margin: 0 4px 20px;
+    padding: 18px 16px 12px;
+    background: linear-gradient(180deg, #3047c4 0%, #18267f 55%, #0f1858 100%);
+    border: 3px solid #ffffff;
+    border-radius: 6px;
+    /* outer dark rim + inner dark rim = the classic double frame */
+    box-shadow:
+        0 0 0 3px #080c2e,
+        inset 0 0 0 2px #080c2e,
+        0 7px 0 3px rgba(0, 0, 0, 0.35);
+    animation: rpgOpen 0.18s steps(3);
+}
+
+/* Speaker name tab sitting on the top frame */
+.author {
+    position: absolute;
+    top: -14px; left: 12px;
+    padding: 0 10px;
+    line-height: 22px;
+    background: #080c2e;
+    border: 2px solid #ffffff;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.author-sep { display: none; }
+
+/* Platform logo in a matching tab on the right */
+.platform-icon {
+    position: absolute;
+    top: -14px; right: 12px;
+    padding: 2px 6px;
+    background: #080c2e;
+    border: 2px solid #ffffff;
+    border-radius: 4px;
+    line-height: 0;
+}
+.platform-icon svg { width: 16px; height: 16px; }
+
+.text {
+    display: block;
+    line-height: 1.55;
+    text-shadow: 2px 2px 0 #000000;
+    word-break: break-word;
+}
+
+/* Blinking "next" arrow on the newest box once it has finished typing */
+.message:last-child .text.typed::after {
+    content: '\25BC';
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 11px;
+    color: #ffd84a;
+    animation: rpgBlink 0.8s steps(2) infinite;
+}
+
+/* Mentions: golden frame */
+.message.mention-highlight {
+    background: linear-gradient(180deg, #4a3fa8 0%, #2a1f78 100%) !important;
+    border: 3px solid #ffd84a !important;
+}
+
+@keyframes rpgOpen {
+    from { transform: scaleY(0.1); opacity: 0.4; }
+    to { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes rpgBlink {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0.2; transform: translateY(2px); }
+}

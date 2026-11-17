@@ -1,0 +1,91 @@
+/* @name: Cozy Pastel */
+/* Cozy Pastel — cute cream speech bubbles with chunky outlines, a name pill and
+   a platform pill on top, and a bouncy entrance. */
+body {
+    font-family: 'Nunito', 'Segoe UI Rounded', 'Arial Rounded MT Bold', 'Segoe UI', sans-serif;
+    background: transparent; color: #4a3428;
+    margin: 0; padding: 10px; font-size: 16px; overflow: hidden;
+}
+
+.message {
+    --ink: #4a3428;
+    --pill: #e9dcff;
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: end;
+    column-gap: 6px;
+    margin: 0 6px 16px;
+    animation: cozyPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: left bottom;
+}
+
+.message[data-platform="Twitch"]  { --pill: #e3d4ff; }
+.message[data-platform="YouTube"] { --pill: #ffd6d6; }
+.message[data-platform="Kick"]    { --pill: #d8ffc9; }
+.message[data-platform="TikTok"]  { --pill: #ffd6e8; }
+
+/* Pills overlap the bubble's top edge */
+.author, .platform-icon {
+    position: relative;
+    z-index: 1;
+    margin-bottom: -4px;
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 13px;
+    line-height: 18px;
+}
+
+/* Name pill: tinted with the chatter's color, text always dark for readability */
+.author {
+    grid-row: 1; grid-column: 1;
+    justify-self: start;
+    padding: 1px 12px;
+    background: #fff3c4;
+    background: color-mix(in srgb, var(--user-color, #ffd27a) 30%, #fff8e6);
+    color: var(--ink) !important;
+}
+.author-sep { display: none; }
+
+/* Platform pill: logo + platform name */
+.platform-icon {
+    grid-row: 1; grid-column: 2;
+    display: flex; align-items: center; gap: 5px;
+    padding: 1px 10px 1px 8px;
+    background: var(--pill);
+}
+.platform-icon svg { width: 13px; height: 13px; display: block; }
+.platform-icon::after { color: var(--ink); }
+.message[data-platform="Twitch"]  .platform-icon::after { content: 'Twitch'; }
+.message[data-platform="YouTube"] .platform-icon::after { content: 'YouTube'; }
+.message[data-platform="Kick"]    .platform-icon::after { content: 'Kick'; }
+.message[data-platform="TikTok"]  .platform-icon::after { content: 'TikTok'; }
+
+/* The bubble */
+.text {
+    grid-row: 2; grid-column: 1 / -1;
+    justify-self: start;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 9px 15px 8px;
+    background: #fffaf0;
+    border: 3px solid var(--ink);
+    border-radius: 16px;
+    box-shadow: 0 4px 0 var(--ink);
+    font-weight: 600;
+    color: var(--ink);
+    word-break: break-word;
+}
+
+/* Mentions: bubble turns sunny yellow instead of the default highlight */
+.message.mention-highlight {
+    background: none !important;
+    border-left: none !important;
+    box-shadow: none !important;
+}
+.message.mention-highlight .text { background: #fff1a8; }
+
+@keyframes cozyPop {
+    0% { opacity: 0; transform: scale(0.6) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}

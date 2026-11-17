@@ -1,0 +1,503 @@
+/* Global structure overrides depending on the mode */
+body.mode-widget {
+    overflow: hidden !important;
+}
+
+body.mode-widget #chatbox::-webkit-scrollbar {
+    display: none;
+}
+body.mode-widget #chatbox {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+body.mode-chat {
+    overflow-y: auto !important;
+}
+
+/* Custom Scrollbar styling for Chat Mode */
+body.mode-chat::-webkit-scrollbar {
+    width: 8px;
+}
+
+body.mode-chat::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+body.mode-chat::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+body.mode-chat::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Default Layout */
+#main-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Status Bar ("Live on:" + settings button) at the top of the activity
+   sidebar, so it only exists in streamer mode. */
+#status-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 12px;
+    flex-shrink: 0;
+}
+
+#status-live {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+#settings-btn {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    background: none;
+    border: none;
+    padding: 2px;
+    color: #adadb8;
+    cursor: pointer;
+}
+
+#settings-btn:hover {
+    color: #ffffff;
+}
+
+#settings-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Type icon (star, gift, ...) in the platform's brand color, with a small
+   platform logo underneath so you can tell where it came from. */
+.activity-icon {
+    position: relative;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    color: var(--platform-color, #9146FF);
+}
+
+.activity-icon > svg {
+    width: 22px;
+    height: 22px;
+}
+
+.activity-icon .activity-platform {
+    position: absolute;
+    right: -5px;
+    bottom: -5px;
+    width: 12px;
+    height: 12px;
+    padding: 1px;
+    border-radius: 3px;
+    background: #18181b;
+}
+
+.activity-icon .activity-platform svg {
+    width: 12px;
+    height: 12px;
+    display: block;
+}
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toast svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.status-label {
+    font-family: sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #adadb8;
+}
+
+.status-icon {
+    display: inline-flex;
+    align-items: center;
+    cursor: default;
+}
+
+.status-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Entry animations (skew/translate) briefly overflow sideways; without this a
+   default light horizontal scrollbar flashes in and shoves content up. */
+#chatbox {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 10px;
+    padding-bottom: 20px;
+}
+
+#chatbox,
+#activity-feed {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+#activity-feed {
+    display: none;
+}
+
+/* STREAMER MODE LAYOUT (Side by Side) */
+body.mode-streamer #chatbox {
+    overflow-y: auto !important;
+}
+
+body.mode-streamer #activity-feed {
+    display: flex;
+    flex-direction: column;
+    width: 320px;
+    /* Slightly wider */
+    background: rgba(15, 15, 18, 0.95);
+    border-left: 2px solid #3f3f46;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+/* Swap to Left Side */
+body.activity-left #activity-feed {
+    order: -1;
+    /* Puts it before the chatbox */
+    border-left: none;
+    border-right: 2px solid #3f3f46;
+}
+
+.activity-header {
+    font-weight: bold;
+    text-align: center;
+    color: #9146FF;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #3f3f46;
+    margin-bottom: 15px;
+    font-family: sans-serif;
+    font-size: 18px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #18181b;
+    padding: 14px;
+    margin-bottom: 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.4;
+    font-family: sans-serif;
+    border-left: 4px solid var(--platform-color, #9146FF);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.3s ease;
+}
+
+/* Settings Menu Styles */
+#settings-menu {
+    display: none;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #18181b;
+    color: #efeff1;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #3f3f46;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    font-family: sans-serif;
+    z-index: 9999;
+    width: 250px;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
+}
+
+#settings-menu h3 {
+    margin-top: 0;
+    font-size: 16px;
+    border-bottom: 1px solid #3f3f46;
+    padding-bottom: 10px;
+    margin-bottom: 0;
+}
+
+/* Collapsible settings sections */
+.settings-section {
+    border-bottom: 1px solid #3f3f46;
+}
+
+.settings-section summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #adadb8;
+    cursor: pointer;
+    user-select: none;
+}
+
+.settings-section summary::-webkit-details-marker {
+    display: none;
+}
+
+.settings-section summary:hover {
+    color: #efeff1;
+}
+
+/* Chevron that points right when closed, down when open */
+.settings-section summary::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+}
+
+.settings-section[open] summary::after {
+    transform: rotate(45deg);
+}
+
+.settings-section-body {
+    padding-bottom: 12px;
+}
+
+.setting-row {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-family: sans-serif;
+}
+
+.setting-row select {
+    background: #0e0e10;
+    color: white;
+    border: 1px solid #3f3f46;
+    padding: 8px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.editor-link {
+    display: block;
+    margin: -6px 0 15px;
+    font-size: 12px;
+    color: #a970ff;
+    text-decoration: none;
+}
+
+.editor-link:hover {
+    text-decoration: underline;
+}
+
+.hint {
+    font-size: 12px;
+    color: #adadb8;
+    text-align: center;
+    margin-top: 10px;
+    font-family: sans-serif;
+}
+
+/* Floating Scroll-to-Bottom Button */
+#scroll-btn {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #9146FF;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-family: sans-serif;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 9998;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translate(-50%, 0);
+    }
+
+    40% {
+        transform: translate(-50%, -6px);
+    }
+
+    60% {
+        transform: translate(-50%, -3px);
+    }
+}
+
+/* Universal Emote Styling */
+.emote {
+    height: 28px;
+    vertical-align: middle;
+    margin: 0 2px;
+}
+
+/* Mention Highlighting */
+.mention-highlight {
+    background: rgba(255, 215, 0, 0.15) !important;
+    border-left: 4px solid #ffd700 !important;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+/* System Notifications */
+.system-msg {
+    text-align: center;
+    font-style: italic;
+    font-weight: bold;
+    padding: 8px;
+    margin: 10px 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    font-size: 14px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Toast Notifications */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    background: rgba(20, 20, 25, 0.95);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    font-family: sans-serif;
+    font-weight: bold;
+    text-align: center;
+    border: 1px solid #3f3f46;
+    animation: slideDown 0.3s ease-out, fadeOut 0.5s ease-in 4.5s forwards;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+/* Setup Modal & Stream Switcher */
+#setup-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(10, 10, 15, 0.98);
+    z-index: 100000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: sans-serif;
+    color: white;
+    text-align: center;
+}
+
+.setup-box {
+    background: #18181b;
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px solid #9146FF;
+    box-shadow: 0 10px 30px rgba(145, 70, 255, 0.2);
+    width: 350px;
+}
+
+.stream-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.stream-input-group input {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #3f3f46;
+    background: #0e0e10;
+    color: white;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.action-btn {
+    background: #9146FF;
+    color: white;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.action-btn:hover {
+    background: #a970ff;
+}
+
+.menu-divider {
+    height: 1px;
+    background: #3f3f46;
+    margin: 15px 0;
+}

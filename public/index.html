@@ -5,347 +5,7 @@
     <title>Multi-Chat Widget</title>
     <link id="theme-link" rel="stylesheet" href="/themes/dark-pill.css">
 
-    <style>
-        /* Global structure overrides depending on the mode */
-        body.mode-widget {
-            overflow: hidden !important;
-        }
-
-        body.mode-widget #chatbox::-webkit-scrollbar {
-            display: none;
-        }
-        body.mode-widget #chatbox {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        body.mode-chat {
-            overflow-y: auto !important;
-        }
-
-        /* Custom Scrollbar styling for Chat Mode */
-        body.mode-chat::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        body.mode-chat::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        body.mode-chat::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-        }
-
-        body.mode-chat::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.4);
-        }
-
-        /* Default Layout */
-        #main-container {
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        /* Entry animations (skew/translate) briefly overflow sideways; without this a
-           default light horizontal scrollbar flashes in and shoves content up. */
-        #chatbox {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-top: 10px;
-            padding-bottom: 20px;
-        }
-
-        #chatbox,
-        #activity-feed {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-        }
-
-        #activity-feed {
-            display: none;
-        }
-
-        /* STREAMER MODE LAYOUT (Side by Side) */
-        body.mode-streamer #chatbox {
-            overflow-y: auto !important;
-        }
-
-        body.mode-streamer #activity-feed {
-            display: flex;
-            flex-direction: column;
-            width: 320px;
-            /* Slightly wider */
-            background: rgba(15, 15, 18, 0.95);
-            border-left: 2px solid #3f3f46;
-            padding: 15px;
-            overflow-y: auto;
-        }
-
-        /* Swap to Left Side */
-        body.activity-left #activity-feed {
-            order: -1;
-            /* Puts it before the chatbox */
-            border-left: none;
-            border-right: 2px solid #3f3f46;
-        }
-
-        .activity-header {
-            font-weight: bold;
-            text-align: center;
-            color: #9146FF;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #3f3f46;
-            margin-bottom: 15px;
-            font-family: sans-serif;
-            font-size: 18px;
-        }
-
-        .activity-item {
-            background: #18181b;
-            padding: 14px;
-            margin-bottom: 14px;
-            border-radius: 8px;
-            font-size: 15px;
-            line-height: 1.4;
-            font-family: sans-serif;
-            border-left: 4px solid #9146FF;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            animation: fadeIn 0.3s ease;
-        }
-
-        /* Settings Menu Styles */
-        #settings-menu {
-            display: none;
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #18181b;
-            color: #efeff1;
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #3f3f46;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            font-family: sans-serif;
-            z-index: 9999;
-            width: 250px;
-        }
-
-        #settings-menu h3 {
-            margin-top: 0;
-            font-size: 16px;
-            border-bottom: 1px solid #3f3f46;
-            padding-bottom: 10px;
-        }
-
-        .setting-row {
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            font-family: sans-serif;
-        }
-
-        .setting-row select {
-            background: #0e0e10;
-            color: white;
-            border: 1px solid #3f3f46;
-            padding: 8px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .hint {
-            font-size: 12px;
-            color: #adadb8;
-            text-align: center;
-            margin-top: 10px;
-            font-family: sans-serif;
-        }
-
-        /* Floating Scroll-to-Bottom Button */
-        #scroll-btn {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #9146FF;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-family: sans-serif;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            z-index: 9998;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-
-            0%,
-            20%,
-            50%,
-            80%,
-            100% {
-                transform: translate(-50%, 0);
-            }
-
-            40% {
-                transform: translate(-50%, -6px);
-            }
-
-            60% {
-                transform: translate(-50%, -3px);
-            }
-        }
-
-        /* Universal Emote Styling */
-        .emote {
-            height: 28px;
-            vertical-align: middle;
-            margin: 0 2px;
-        }
-
-        /* Mention Highlighting */
-        .mention-highlight {
-            background: rgba(255, 215, 0, 0.15) !important;
-            border-left: 4px solid #ffd700 !important;
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        }
-
-        /* System Notifications */
-        .system-msg {
-            text-align: center;
-            font-style: italic;
-            font-weight: bold;
-            padding: 8px;
-            margin: 10px 0;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 8px;
-            font-size: 14px;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        /* Toast Notifications */
-        #toast-container {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-        }
-
-        .toast {
-            background: rgba(20, 20, 25, 0.95);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            font-family: sans-serif;
-            font-weight: bold;
-            text-align: center;
-            border: 1px solid #3f3f46;
-            animation: slideDown 0.3s ease-out, fadeOut 0.5s ease-in 4.5s forwards;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeOut {
-            from {
-                opacity: 1;
-            }
-
-            to {
-                opacity: 0;
-            }
-        }
-
-        /* Setup Modal & Stream Switcher */
-        #setup-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(10, 10, 15, 0.98);
-            z-index: 100000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-family: sans-serif;
-            color: white;
-            text-align: center;
-        }
-
-        .setup-box {
-            background: #18181b;
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid #9146FF;
-            box-shadow: 0 10px 30px rgba(145, 70, 255, 0.2);
-            width: 350px;
-        }
-
-        .stream-input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 15px;
-            text-align: left;
-        }
-
-        .stream-input-group input {
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #3f3f46;
-            background: #0e0e10;
-            color: white;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .action-btn {
-            background: #9146FF;
-            color: white;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .action-btn:hover {
-            background: #a970ff;
-        }
-
-        .menu-divider {
-            height: 1px;
-            background: #3f3f46;
-            margin: 15px 0;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/app.css">
 </head>
 
 <body class="mode-widget">
@@ -364,60 +24,89 @@
                 <label>YouTube (Channel ID or Live URL)</label>
                 <input type="text" id="setup-youtube" placeholder="UC... or https://youtu.be/...">
             </div>
+            <div class="stream-input-group">
+                <label>Kick Username</label>
+                <input type="text" id="setup-kick" placeholder="e.g. jugachi">
+            </div>
+            <div class="stream-input-group">
+                <label>TikTok Username</label>
+                <input type="text" id="setup-tiktok" placeholder="e.g. @jugachi">
+            </div>
             <button class="action-btn" id="setup-btn">Connect & Save</button>
         </div>
     </div>
 
     <div id="settings-menu">
         <h3>Widget Settings</h3>
-        <div class="stream-input-group">
-            <label style="font-size:12px; color:#9146FF; font-weight:bold;">Active Twitch</label>
-            <input type="text" id="menu-twitch" placeholder="Username">
-        </div>
-        <div class="stream-input-group">
-            <label style="font-size:12px; color:#FF0000; font-weight:bold;">Active YouTube</label>
-            <input type="text" id="menu-youtube" placeholder="Channel ID or Live URL">
-        </div>
-        <button class="action-btn" id="menu-connect-btn" style="padding: 8px;">Switch Streams</button>
-        <div class="menu-divider"></div>
-        <div class="setting-row">
-            <label>Display Mode</label>
-            <select id="mode-select">
-                <option value="widget">Widget Mode (OBS)</option>
-                <option value="chat">Chat Mode</option>
-                <option value="streamer">Streamer Mode (Chat + Activity Split)</option>
-            </select>
-        </div>
-        <div class="setting-row">
-            <label>Highlight Mentions</label>
-            <select id="mention-select">
-                <option value="true">Enabled</option>
-                <option value="false">Disabled</option>
-            </select>
-        </div>
-        <div class="setting-row">
-            <label>Theme</label>
-            <select id="theme-select">
-                <option value="dark-pill">Dark Pill</option>
-                <option value="cyberpunk">Cyberpunk</option>
-                <option value="glassmorphic">Glassmorphic</option>
-                <option value="retro-arcade">Retro Arcade</option>
-            </select>
-        </div>
-        <div class="setting-row">
-            <label>Background</label>
-            <select id="bg-select">
-                <option value="transparent">Transparent (For OBS)</option>
-                <option value="dark">Dark Mode (For Testing/Monitors)</option>
-            </select>
-        </div>
-        <div class="setting-row">
-            <label>Activity Position</label>
-            <select id="pos-select">
-                <option value="right">Right Side</option>
-                <option value="left">Left Side</option>
-            </select>
-        </div>
+        <details class="settings-section" data-section="streams">
+            <summary>Streams</summary>
+            <div class="settings-section-body">
+                <div class="stream-input-group">
+                    <label style="font-size:12px; color:#9146FF; font-weight:bold;">Active Twitch</label>
+                    <input type="text" id="menu-twitch" placeholder="Username">
+                </div>
+                <div class="stream-input-group">
+                    <label style="font-size:12px; color:#FF0000; font-weight:bold;">Active YouTube</label>
+                    <input type="text" id="menu-youtube" placeholder="Channel ID or Live URL">
+                </div>
+                <div class="stream-input-group">
+                    <label style="font-size:12px; color:#53FC18; font-weight:bold;">Active Kick</label>
+                    <input type="text" id="menu-kick" placeholder="Username">
+                </div>
+                <div class="stream-input-group">
+                    <label style="font-size:12px; color:#FF0050; font-weight:bold;">Active TikTok</label>
+                    <input type="text" id="menu-tiktok" placeholder="@username">
+                </div>
+                <button class="action-btn" id="menu-connect-btn" style="padding: 8px;">Switch Streams</button>
+            </div>
+        </details>
+        <details class="settings-section" data-section="display" open>
+            <summary>Display</summary>
+            <div class="settings-section-body">
+                <div class="setting-row">
+                    <label>Display Mode</label>
+                    <select id="mode-select">
+                        <option value="widget">Widget Mode (OBS)</option>
+                        <option value="chat">Chat Mode</option>
+                        <option value="streamer">Streamer Mode (Chat + Activity Split)</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label>Theme</label>
+                    <select id="theme-select">
+                        <!-- filled from /api/themes by main.js -->
+                        <option value="dark-pill">Dark Pill</option>
+                    </select>
+                </div>
+                <a class="editor-link" href="/editor.html" target="_blank" rel="noopener">Open Theme Editor &rarr;</a>
+                <div class="setting-row">
+                    <label>Background</label>
+                    <select id="bg-select">
+                        <option value="transparent">Transparent (For OBS)</option>
+                        <option value="dark">Dark Mode (For Testing/Monitors)</option>
+                    </select>
+                </div>
+            </div>
+        </details>
+        <details class="settings-section" data-section="chat">
+            <summary>Chat &amp; Activity</summary>
+            <div class="settings-section-body">
+                <div class="setting-row">
+                    <label>Highlight Mentions</label>
+                    <select id="mention-select">
+                        <option value="true">Enabled</option>
+                        <option value="false">Disabled</option>
+                    </select>
+                </div>
+                <div class="setting-row">
+                    <label>Activity Position</label>
+                    <select id="pos-select">
+                        <option value="right">Right Side</option>
+                        <option value="left">Left Side</option>
+                    </select>
+                </div>
+            </div>
+        </details>
         <div class="hint">Press 'T' to close</div>
     </div>
 
@@ -426,326 +115,19 @@
     <div id="main-container">
         <div id="chatbox"></div>
         <div id="activity-feed">
+            <div id="status-bar">
+                <div id="status-live"></div>
+                <button id="settings-btn" title="Widget Settings (T)" aria-label="Widget Settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+            </div>
             <div class="activity-header">Recent Activity</div>
             <div id="activity-list"></div>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const chatbox = document.getElementById('chatbox');
-        const settingsMenu = document.getElementById('settings-menu');
-        const modeSelect = document.getElementById('mode-select');
-        const themeSelect = document.getElementById('theme-select');
-        const bgSelect = document.getElementById('bg-select');
-        const themeLink = document.getElementById('theme-link');
-        const scrollBtn = document.getElementById('scroll-btn');
-        const mentionSelect = document.getElementById('mention-select');
-        const urlParams = new URLSearchParams(window.location.search);
-        const overrideMode = urlParams.get('mode');
-        const overrideBg = urlParams.get('bg');
-        const overrideTheme = urlParams.get('theme');
-        const posSelect = document.getElementById('pos-select');
-
-        // Setup Elements
-        const setupModal = document.getElementById('setup-modal');
-        const setupTwitch = document.getElementById('setup-twitch');
-        const setupYoutube = document.getElementById('setup-youtube');
-        const setupBtn = document.getElementById('setup-btn');
-        const menuTwitch = document.getElementById('menu-twitch');
-        const menuYoutube = document.getElementById('menu-youtube');
-        const menuConnectBtn = document.getElementById('menu-connect-btn');
-
-        let currentMode = 'widget';
-        let isUserScrolledUp = false;
-        let streamerName = "";
-        let highlightMentions = true;
-
-        const icons = {
-            Twitch: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>`,
-            YouTube: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`
-        };
-
-        // --- Username color contrast helpers ---
-        // Parses any valid CSS color string into {r,g,b,a} by letting the canvas
-        // 2D context normalize it (handles hex, rgb(), rgba(), named colors, etc).
-        let colorParseCtx = null;
-        function parseCssColor(str) {
-            if (!colorParseCtx) colorParseCtx = document.createElement('canvas').getContext('2d');
-            colorParseCtx.fillStyle = '#000000';
-            colorParseCtx.fillStyle = str;
-            const normalized = colorParseCtx.fillStyle;
-            if (normalized[0] === '#') {
-                const num = parseInt(normalized.slice(1), 16);
-                return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255, a: 1 };
-            }
-            const m = normalized.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?\)/);
-            return { r: +m[1], g: +m[2], b: +m[3], a: m[4] !== undefined ? +m[4] : 1 };
-        }
-
-        // Flattens a (possibly translucent) color onto a black backdrop, since every
-        // theme in this app is dark-on-dark (no light theme/background exists).
-        function flattenOnBlack(rgba) {
-            return { r: rgba.r * rgba.a, g: rgba.g * rgba.a, b: rgba.b * rgba.a };
-        }
-
-        function relativeLuminance([r, g, b]) {
-            const [rs, gs, bs] = [r, g, b].map((c) => {
-                c /= 255;
-                return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-            });
-            return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
-        }
-
-        function contrastRatio(rgbA, rgbB) {
-            const lA = relativeLuminance(rgbA) + 0.05;
-            const lB = relativeLuminance(rgbB) + 0.05;
-            return lA > lB ? lA / lB : lB / lA;
-        }
-
-        // If `colorStr` doesn't contrast enough against the message bubble behind it,
-        // fall back to whichever of white/black is more readable on that background.
-        function getReadableUsernameColor(colorStr, bgElement) {
-            const bg = flattenOnBlack(parseCssColor(getComputedStyle(bgElement).backgroundColor));
-            const fg = parseCssColor(colorStr);
-            if (contrastRatio([fg.r, fg.g, fg.b], [bg.r, bg.g, bg.b]) >= 4.5) {
-                return colorStr;
-            }
-            const whiteContrast = contrastRatio([255, 255, 255], [bg.r, bg.g, bg.b]);
-            const blackContrast = contrastRatio([0, 0, 0], [bg.r, bg.g, bg.b]);
-            return whiteContrast >= blackContrast ? '#ffffff' : '#000000';
-        }
-
-        function createMessageElement(data) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'message';
-
-            // Check if mentions are enabled AND the message contains your name
-            if (highlightMentions && streamerName && data.message.toLowerCase().includes(streamerName.toLowerCase())) {
-                msgDiv.classList.add('mention-highlight');
-            }
-
-            const iconSvg = icons[data.platform] || '';
-            msgDiv.innerHTML = `
-                <div class="platform-icon" style="color: ${data.color}">${iconSvg}</div>
-                <span class="author" style="color: ${data.platform === 'Twitch' ? data.color : 'inherit'}">${data.author}:</span>
-                <span class="text">${data.message}</span>
-            `;
-            return msgDiv;
-        }
-
-        // Toast System Message
-        socket.on('systemMessage', (data) => {
-            // Check session storage so we only show the popup ONCE per tab session
-            if (sessionStorage.getItem('notified_' + data.id)) return;
-            sessionStorage.setItem('notified_' + data.id, 'true');
-
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.style.borderBottom = `3px solid ${data.color}`;
-            toast.innerText = data.text;
-
-            document.getElementById('toast-container').appendChild(toast);
-
-            // Remove from DOM after animation ends (5s total)
-            setTimeout(() => toast.remove(), 5000);
-        });
-
-        function appendMessage(data) {
-            const msgElement = createMessageElement(data);
-            chatbox.appendChild(msgElement);
-
-            // Twitch usernames use the viewer's chosen chat color, which can be too
-            // close to the message bubble's background to read — fix it up once the
-            // element is in the DOM so we can measure the real rendered background.
-            if (data.platform === 'Twitch') {
-                const authorSpan = msgElement.querySelector('.author');
-                if (authorSpan) {
-                    authorSpan.style.color = getReadableUsernameColor(data.color, msgElement);
-                }
-            }
-
-            const maxAllowed = (currentMode === 'widget') ? 50 : 1000;
-            while (chatbox.children.length > maxAllowed) {
-                chatbox.removeChild(chatbox.firstChild);
-            }
-
-            if (!isUserScrolledUp || currentMode === 'widget') {
-                chatbox.scrollTop = chatbox.scrollHeight; 
-            } else {
-                scrollBtn.style.display = 'block';
-            }
-        }
-
-        socket.on('loadConfig', (config) => {
-            // Apply URL overrides first so we know the true state
-            currentMode = overrideMode || config.mode || 'widget';
-
-            if (config.needsSetup && overrideMode !== 'widget') {
-                setupModal.style.display = 'flex';
-            } else {
-                setupModal.style.display = 'none';
-            }
-
-            if (config.activeTwitch) menuTwitch.value = config.activeTwitch;
-            if (config.activeYouTube) menuYoutube.value = config.activeYouTube;
-
-            // Apply Mode Settings
-            document.body.className = `mode-${currentMode}`;
-            modeSelect.value = currentMode;
-            if (currentMode === 'widget') scrollBtn.style.display = 'none';
-
-            // Apply Theme Settings
-            const activeTheme = overrideTheme || config.theme;
-            themeLink.href = `/themes/${activeTheme}.css`;
-            themeSelect.value = activeTheme;
-
-            // Apply Background Settings
-            const activeBg = overrideBg || config.background;
-            document.body.style.background = activeBg === 'dark' ? '#0e0e10' : 'transparent';
-            bgSelect.value = activeBg;
-
-            // Apply Mentions Settings
-            streamerName = config.streamerName || "";
-            highlightMentions = config.mentions !== false;
-            mentionSelect.value = highlightMentions.toString();
-
-            // Apply Activity Position Settings
-            const activePos = urlParams.get('pos') || config.activityPos || 'right';
-            if (activePos === 'left') document.body.classList.add('activity-left');
-            else document.body.classList.remove('activity-left');
-            if (posSelect) posSelect.value = activePos;
-        });
-
-        // Load complete server-side history cache upon opening/refreshing tab
-        socket.on('chatHistory', (history) => {
-            chatbox.innerHTML = '';
-            history.forEach(msg => appendMessage(msg));
-            window.scrollTo(0, document.body.scrollHeight);
-        });
-
-        socket.on('chatMessage', (data) => {
-            appendMessage(data);
-        });
-
-        modeSelect.addEventListener('change', (e) => socket.emit('updateConfig', { mode: e.target.value }));
-        themeSelect.addEventListener('change', (e) => socket.emit('updateConfig', { theme: e.target.value }));
-        bgSelect.addEventListener('change', (e) => socket.emit('updateConfig', { background: e.target.value }));
-        mentionSelect.addEventListener('change', (e) => socket.emit('updateConfig', { mentions: e.target.value === 'true' }));
-
-        // Detect manual scrolling up
-        chatbox.addEventListener('scroll', () => {
-            if (currentMode === 'widget') return; // Ignore manual scroll tracking in widget mode
-
-            // Calculate how far the user is from the bottom of the chatbox
-            const distanceToBottom = chatbox.scrollHeight - chatbox.clientHeight - chatbox.scrollTop;
-            isUserScrolledUp = distanceToBottom > 80;
-
-            if (!isUserScrolledUp) {
-                scrollBtn.style.display = 'none';
-            }
-        });
-
-        // Click handler for the floating snap-to-bottom button
-        scrollBtn.addEventListener('click', () => {
-            chatbox.scrollTop = chatbox.scrollHeight;
-            scrollBtn.style.display = 'none';
-            isUserScrolledUp = false;
-        });
-
-        // Toggle configuration menu with 'T' key, and position with L/R
-        document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-
-            const key = e.key.toLowerCase();
-
-            if (key === 't') {
-                settingsMenu.style.display = (settingsMenu.style.display === 'block') ? 'none' : 'block';
-            }
-
-            if (currentMode === 'streamer') {
-                if (key === 'l') socket.emit('updateConfig', { activityPos: 'left' });
-                if (key === 'r') socket.emit('updateConfig', { activityPos: 'right' });
-            }
-        });
-
-        const activityList = document.getElementById('activity-list');
-
-        function appendActivity(data) {
-            const div = document.createElement('div');
-            div.className = 'activity-item';
-            div.innerText = data.text;
-            activityList.prepend(div); // Add to the TOP of the list
-
-            // Keep maximum 100 activities in the DOM
-            while (activityList.children.length > 100) {
-                activityList.removeChild(activityList.lastChild);
-            }
-        }
-
-        socket.on('activityMessage', (data) => {
-            appendActivity(data);
-        });
-
-        socket.on('activityHistory', (history) => {
-            activityList.innerHTML = '';
-            // Reverse so newest is on top when appending
-            [...history].reverse().forEach(data => appendActivity(data));
-        });
-
-        // Detect manual scrolling up on the Window (Chat Mode)
-        window.addEventListener('scroll', () => {
-            if (currentMode !== 'chat') return;
-            const distanceToBottom = document.body.scrollHeight - window.innerHeight - window.scrollY;
-            isUserScrolledUp = distanceToBottom > 80;
-            if (!isUserScrolledUp) scrollBtn.style.display = 'none';
-        });
-
-        // Detect manual scrolling up on the Chatbox (Streamer Mode)
-        chatbox.addEventListener('scroll', () => {
-            if (currentMode !== 'streamer') return;
-            const distanceToBottom = chatbox.scrollHeight - chatbox.clientHeight - chatbox.scrollTop;
-            isUserScrolledUp = distanceToBottom > 80;
-            if (!isUserScrolledUp) scrollBtn.style.display = 'none';
-        });
-
-        // Click handler for the floating snap-to-bottom button
-        scrollBtn.addEventListener('click', () => {
-            if (currentMode === 'streamer') chatbox.scrollTop = chatbox.scrollHeight;
-            else window.scrollTo(0, document.body.scrollHeight);
-
-            scrollBtn.style.display = 'none';
-            isUserScrolledUp = false;
-        });
-
-        // Event Listener for the Position Dropdown
-        if (posSelect) {
-            posSelect.addEventListener('change', (e) => socket.emit('updateConfig', { activityPos: e.target.value }));
-        }
-
-        // Handle Setup Modal Submit
-        setupBtn.addEventListener('click', () => {
-            const t = setupTwitch.value.trim();
-            const y = setupYoutube.value.trim();
-            if (!t && !y) return alert("Please enter at least one channel!");
-            socket.emit('updateStreams', { twitch: t, youtube: y });
-            setupModal.style.display = 'none';
-        });
-
-        // Handle Settings Menu Stream Switch Submit
-        menuConnectBtn.addEventListener('click', () => {
-            const t = menuTwitch.value.trim();
-            const y = menuYoutube.value.trim();
-
-            sessionStorage.removeItem('notified_twitch');
-            sessionStorage.removeItem('notified_youtube');
-            socket.emit('updateStreams', { twitch: t, youtube: y });
-            menuConnectBtn.innerText = "Connecting...";
-            setTimeout(() => menuConnectBtn.innerText = "Switch Streams", 1500);
-        });
-
-    </script>
+    <script type="module" src="/js/main.js"></script>
 </body>
 
 </html>
