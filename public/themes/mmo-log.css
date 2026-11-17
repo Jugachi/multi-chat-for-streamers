@@ -1,6 +1,6 @@
 /* @name: MMO Chat Log */
 /* MMO Chat Log — classic MMO-style chat lines: no boxes, outlined text,
-   "[Twitch] [Name]: message", each platform gets its own channel color. */
+   "<logo> [Name]: message", each platform gets its own channel color. */
 body {
     font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
     background: transparent; color: #ffffff;
@@ -28,13 +28,12 @@ body {
 .message[data-platform="Kick"]    { --chan: #9dff7a; }
 .message[data-platform="TikTok"]  { --chan: #7fe9ff; }
 
-/* Platform shown as a text channel tag instead of a logo */
-.platform-icon { display: inline; color: var(--chan) !important; }
-.platform-icon svg { display: none; }
-.message[data-platform="Twitch"]  .platform-icon::before { content: '[Twitch] '; }
-.message[data-platform="YouTube"] .platform-icon::before { content: '[YouTube] '; }
-.message[data-platform="Kick"]    .platform-icon::before { content: '[Kick] '; }
-.message[data-platform="TikTok"]  .platform-icon::before { content: '[TikTok] '; }
+/* Platform logo in its brand color, inline like a channel tag */
+.platform-icon { display: inline-block; margin-right: 4px; vertical-align: -2px; }
+.platform-icon svg {
+    width: 1em; height: 1em;
+    filter: drop-shadow(1px 1px 0 #000) drop-shadow(-1px -1px 0 #000);
+}
 
 .author { font-weight: bold; }
 .author-name::before { content: '['; }
@@ -56,3 +55,89 @@ body {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+
+/* ---------- Chat mode: in-game chat window ----------
+   Translucent framed panel with a tab on top and an input box below.
+   Widget mode (OBS) keeps the frameless lines above. */
+body.mode-chat {
+    --frame: #a8834a;
+    --frame-dark: #4a3518;
+    padding: 0;
+    font-size: 15px;
+}
+
+body.mode-chat #main-container {
+    position: relative;
+    box-sizing: border-box;
+    padding: 34px 14px 46px;
+}
+
+/* Window tab */
+body.mode-chat #main-container::before {
+    content: 'General';
+    position: absolute;
+    top: 9px; left: 22px;
+    height: 25px;
+    padding: 0 18px;
+    line-height: 25px;
+    font-weight: bold;
+    font-size: 13px;
+    color: #ffd25a;
+    text-shadow: 1px 1px 0 #000;
+    background: linear-gradient(180deg, rgba(60, 45, 22, 0.95), rgba(14, 10, 6, 0.9));
+    border: 1px solid var(--frame);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    box-shadow: inset 0 1px 0 rgba(255, 220, 150, 0.25);
+    z-index: 1;
+}
+
+/* Chat window frame */
+body.mode-chat #chatbox {
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid var(--frame);
+    border-radius: 3px;
+    outline: 1px solid #000;
+    box-shadow:
+        inset 0 0 0 1px var(--frame-dark),
+        inset 0 0 14px rgba(0, 0, 0, 0.8),
+        0 0 6px rgba(0, 0, 0, 0.7);
+}
+
+/* Input box under the window */
+body.mode-chat #main-container::after {
+    content: 'Say:';
+    position: absolute;
+    left: 14px; right: 14px; bottom: 10px;
+    height: 26px;
+    padding: 0 10px;
+    line-height: 26px;
+    font-size: 14px;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--frame);
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px var(--frame-dark), inset 0 0 8px rgba(0, 0, 0, 0.9);
+}
+
+body.mode-chat .message { margin-bottom: 1px; padding: 0 2px; }
+
+/* Scrollbar: thin dark track, bronze thumb */
+body.mode-chat #chatbox { scrollbar-width: auto; scrollbar-color: var(--frame) rgba(0, 0, 0, 0.6); }
+body.mode-chat #chatbox::-webkit-scrollbar { width: 12px; }
+body.mode-chat #chatbox::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.6);
+    border-left: 1px solid var(--frame-dark);
+}
+body.mode-chat #chatbox::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, #6b4c22, #c9a05a, #6b4c22);
+    border: 1px solid #000;
+    border-radius: 2px;
+}
+
+/* Lines sit at the bottom of the window, like in game. margin-top: auto
+   instead of justify-content: flex-end, which breaks scrolling up. */
+body.mode-chat #chatbox { display: flex; flex-direction: column; }
+body.mode-chat #chatbox > .message:first-child { margin-top: auto; }

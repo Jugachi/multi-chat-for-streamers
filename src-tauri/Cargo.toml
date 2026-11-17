@@ -1,0 +1,15 @@
+[package]
+name = "multi-chat"
+description = "Multi-Chat desktop app: Twitch, YouTube, Kick and TikTok chat in one window and OBS overlay"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+multichat-core = { path = "../crates/multichat-core" }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+tauri-plugin-single-instance = "2"

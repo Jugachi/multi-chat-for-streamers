@@ -1,0 +1,16 @@
+[workspace]
+resolver = "2"
+members = ["crates/multichat-core", "src-tauri"]
+
+[workspace.package]
+version = "2.0.0"
+edition = "2021"
+license = "ISC"
+
+# Small, fast release binaries
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

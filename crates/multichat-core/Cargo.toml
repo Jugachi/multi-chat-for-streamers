@@ -1,0 +1,36 @@
+[package]
+name = "multichat-core"
+description = "Multi-Chat server: platform connections, chat hub, web server for the overlay and theme editor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "multichat_core"
+
+# Headless server (no window): `cargo run -p multichat-core --bin multichat-server -- --virtual`
+[[bin]]
+name = "multichat-server"
+path = "src/bin/multichat-server.rs"
+
+[dependencies]
+anyhow = "1"
+axum = { version = "0.8", features = ["ws"] }
+dirs = "6"
+fastrand = "2"
+flate2 = "1"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+mime_guess = "2"
+notify = "8"
+prost = "0.14"
+regex = "1"
+# OS TLS (SChannel on Windows): small binary and works behind corporate TLS proxies
+reqwest = { version = "0.12", default-features = false, features = ["json", "gzip", "cookies", "native-tls"] }
+rust-embed = "8"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "sync", "time", "fs", "signal"] }
+tokio-tungstenite = { version = "0.26", features = ["native-tls"] }
+
+[dev-dependencies]
+tokio-tungstenite = { version = "0.26", features = ["native-tls"] }

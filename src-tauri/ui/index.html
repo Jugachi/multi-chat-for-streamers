@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<!-- Shown by the desktop app only if the chat server could not start
+     (e.g. the port is used by another program). The real UI is served by the
+     built-in server from public/. -->
+<head>
+    <meta charset="utf-8">
+    <title>Multi-Chat</title>
+    <style>
+        body { margin: 0; height: 100vh; display: flex; align-items: center; justify-content: center;
+               background: #0e0e10; color: #efeff1; font-family: 'Segoe UI', sans-serif; }
+        .box { max-width: 520px; padding: 28px; background: #18181b; border: 1px solid #9146ff; border-radius: 12px; }
+        h1 { margin: 0 0 12px; font-size: 20px; color: #a970ff; }
+        pre { white-space: pre-wrap; color: #ff8a8a; font-family: Consolas, monospace; font-size: 13px; }
+        p { color: #adadb8; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>Multi-Chat could not start</h1>
+        <pre id="error"></pre>
+        <p>Close other programs using this port, or set a different <code>"port"</code> in
+            <code>config.json</code> (in the data folder shown above), then start Multi-Chat again.</p>
+    </div>
+    <script>
+        document.getElementById('error').textContent = window.__STARTUP_ERROR__ || 'Unknown error';
+    </script>
+</body>
+</html>
